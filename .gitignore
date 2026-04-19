@@ -1,0 +1,15 @@
+node_modules
+.next
+.env
+.env.local
+.DS_Store
+*.log
+data/*.csv
+# The SQLite DB is small (~3MB) and committed so Railway deploys have data.
+# Rebuild via `npm run import-data` if you have fresh CSVs in data/.
+!data/land-registry.db
+.vercel
+.turbo
+out
+build
+dist

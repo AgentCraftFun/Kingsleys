@@ -1,0 +1,16 @@
+# Nixpacks config for Railway.
+# better-sqlite3 needs python3 + build tools at install time to compile native bindings.
+# The Node provider usually handles this, but we make it explicit so native builds
+# don't fail on clean Railway builders.
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "python3", "gcc", "pkg-config", "gnumake"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"
