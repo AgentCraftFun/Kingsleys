@@ -8,6 +8,9 @@ data/*.csv
 # The SQLite DB is small (~3MB) and committed so Railway deploys have data.
 # Rebuild via `npm run import-data` if you have fresh CSVs in data/.
 !data/land-registry.db
+# SQLite WAL-mode auxiliary files — regenerated at runtime, never commit.
+data/*.db-shm
+data/*.db-wal
 .vercel
 .turbo
 out
