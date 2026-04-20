@@ -38,7 +38,7 @@ export default function ReportView({
         </div>
         <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight leading-tight" style={{ color: "var(--agency-text)" }}>
           Your {result.input.bedrooms}-bedroom {propertyTypeReadable},{" "}
-          <span style={{ color: "var(--agency-accent)" }}>{result.sector}</span>
+          <span className="whitespace-nowrap" style={{ color: "var(--agency-accent)" }}>{result.input.postcode}</span>
         </h1>
         <p className="mt-3 text-base sm:text-lg" style={{ color: "var(--agency-muted)" }}>
           Based on {result.sampleSize} nearby transactions in {scopeLabel}, recorded by HM Land
@@ -46,14 +46,17 @@ export default function ReportView({
         </p>
 
         <div className="mt-8 rounded-2xl overflow-hidden border" style={{ borderColor: "var(--agency-border)" }}>
-          <div className="p-6 sm:p-8 bg-white">
+          <div className="px-5 py-6 sm:p-8 bg-white">
             <div className="text-sm font-medium uppercase tracking-wider" style={{ color: "var(--agency-muted)" }}>
               Indicative sale price range
             </div>
-            <div className="mt-3 text-4xl sm:text-6xl font-semibold tracking-tight" style={{ color: "var(--agency-text)" }}>
-              £{result.lowerBound.toLocaleString()}
-              <span className="mx-2" style={{ color: "var(--agency-accent)" }}>–</span>
-              £{result.upperBound.toLocaleString()}
+            <div
+              className="mt-3 font-semibold tracking-tight text-[clamp(1.5rem,6.5vw,3rem)] leading-[1.05] whitespace-nowrap"
+              style={{ color: "var(--agency-text)" }}
+            >
+              <span>£{result.lowerBound.toLocaleString()}</span>
+              <span className="mx-2 sm:mx-3" style={{ color: "var(--agency-accent)" }}>–</span>
+              <span>£{result.upperBound.toLocaleString()}</span>
             </div>
             <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--agency-muted)" }}>
               An indicative band based only on public Land Registry data. {agency.directorFirstName}{" "}
@@ -62,7 +65,7 @@ export default function ReportView({
             </p>
           </div>
 
-          <div className="p-6 sm:p-8" style={{ background: "var(--agency-bg-soft)" }}>
+          <div className="px-5 py-6 sm:p-8" style={{ background: "var(--agency-bg-soft)" }}>
             <div className="text-sm font-medium uppercase tracking-wider" style={{ color: "var(--agency-muted)" }}>
               Indicative monthly rent
             </div>
