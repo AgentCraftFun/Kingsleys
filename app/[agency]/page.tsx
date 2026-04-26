@@ -26,6 +26,7 @@ export default async function AgencyPage({
     directorTitle: agency.directorTitle,
     hasNamedDirector: agency.directorName !== null,
     logoPath: resolveAgencyLogoPath(agency),
+    logoAspect: agency.logoAspect,
     tagline: agency.tagline,
     postcodesInAgencyPatch: agency.postcodesInAgencyPatch,
     postcodesInValuationDB: agency.postcodesInValuationDB,

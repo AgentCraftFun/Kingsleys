@@ -23,6 +23,7 @@ export type PublicAgency = {
   directorTitle: string;
   hasNamedDirector: boolean;
   logoPath: string;
+  logoAspect: "wide" | "square" | "tall";
   tagline: string;
   postcodesInAgencyPatch: string[];
   postcodesInValuationDB: string[];
@@ -207,6 +208,22 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
 function Header({ agency }: { agency: PublicAgency }) {
   const isSvg = agency.logoPath.toLowerCase().endsWith(".svg");
   const onPrimary = agency.headerBg === "primary";
+
+  // Header height bumps for non-wide logos so square badges and portrait
+  // logos are legible at the same visual weight as a wide wordmark.
+  const logoSizeClass =
+    agency.logoAspect === "tall"
+      ? "h-12 sm:h-16 w-auto max-w-[5rem] sm:max-w-[6rem]"
+      : agency.logoAspect === "square"
+        ? "h-10 sm:h-14 w-auto"
+        : "h-8 sm:h-10 w-auto";
+
+  // Header padding tightens for taller logos so they don't blow up the bar.
+  const headerPaddingClass =
+    agency.logoAspect === "tall" || agency.logoAspect === "square"
+      ? "py-3 sm:py-4"
+      : "py-4";
+
   return (
     <header
       className="w-full border-b"
@@ -215,7 +232,7 @@ function Header({ agency }: { agency: PublicAgency }) {
         borderColor: onPrimary ? "var(--agency-primary)" : "var(--agency-border)",
       }}
     >
-      <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between gap-4">
+      <div className={`max-w-5xl mx-auto px-5 sm:px-8 ${headerPaddingClass} flex items-center justify-between gap-4`}>
         <a
           href={agency.website}
           target="_blank"
@@ -228,16 +245,16 @@ function Header({ agency }: { agency: PublicAgency }) {
             <img
               src={agency.logoPath}
               alt={agency.name}
-              className="h-7 sm:h-8 w-auto"
+              className={logoSizeClass}
             />
           ) : (
             <Image
               src={agency.logoPath}
               alt={agency.name}
-              width={200}
-              height={30}
+              width={300}
+              height={120}
               priority
-              className="h-6 sm:h-7 w-auto"
+              className={logoSizeClass}
             />
           )}
         </a>

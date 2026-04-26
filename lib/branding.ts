@@ -13,7 +13,7 @@ export type AgencyConfig = {
   /** Used in CTAs when directorName is null, e.g. "the Ellis & Co Golders Green team". */
   directorFallback?: string;
   logoPath: string;
-  logoAspect: "wide" | "square";
+  logoAspect: "wide" | "square" | "tall";
   colors: {
     primary: string;
     primaryHover: string;
@@ -271,7 +271,7 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     directorFirstName: "Rachel",
     directorTitle: "Director",
     logoPath: "/agencies/rawlins/logo.svg",
-    logoAspect: "wide",
+    logoAspect: "tall",
     colors: {
       primary: "#7d7836",
       primaryHover: "#5d5826",
@@ -354,7 +354,7 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     directorFirstName: "Sheldon",
     directorTitle: "Director",
     logoPath: "/agencies/hendonestates/logo.png",
-    logoAspect: "wide",
+    logoAspect: "square",
     colors: {
       primary: "#cf0a08",
       primaryHover: "#a30806",
@@ -396,7 +396,7 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     directorFirstName: "Simon",
     directorTitle: "Director",
     logoPath: "/agencies/keyhaven/logo.png",
-    logoAspect: "wide",
+    logoAspect: "square",
     colors: {
       primary: "#1f44e0",
       primaryHover: "#173399",
@@ -484,7 +484,7 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     directorFirstName: "Graham",
     directorTitle: "Sales Partner",
     logoPath: "/agencies/winkworth/logo.svg",
-    logoAspect: "wide",
+    logoAspect: "square",
     colors: {
       primary: "#14142b",
       primaryHover: "#0a0a1a",
