@@ -12,10 +12,38 @@ export async function generateMetadata({
   const { agency: slug } = await params;
   const agency = getAgency(slug);
   if (!agency) return { title: "Not found" };
+
   const title = agency.pageTitle ?? `Property Valuation — ${agency.name}, ${agency.area}`;
+  const description =
+    agency.audience === "landlord"
+      ? `Get a free Landlord Rental Report for your ${agency.area} property, prepared by ${agency.name} using HM Land Registry data and local lettings yields.`
+      : `Get a free Property Intelligence Report for your ${agency.area} home, prepared by ${agency.name} using HM Land Registry data.`;
+
   return {
     title,
-    description: `A data-driven local market report for your property, prepared by ${agency.name}. Powered by HM Land Registry data.`,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      siteName: agency.name,
+      url: `/${agency.slug}`,
+      images: [
+        {
+          url: agency.logoPath,
+          alt: `${agency.name} logo`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+      images: [agency.logoPath],
+    },
+    alternates: {
+      canonical: `/${agency.slug}`,
+    },
   };
 }
 

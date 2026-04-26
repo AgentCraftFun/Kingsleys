@@ -1,18 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 80" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Rawlins Estates">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 110" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Rawlins Estates">
   <text
-    x="0"
-    y="48"
+    x="60"
+    y="68"
+    text-anchor="middle"
     font-family="'Cormorant Garamond', 'Garamond', 'Georgia', serif"
-    font-size="44"
-    font-weight="600"
-    letter-spacing="1"
-    fill="#2a3937">RAWLINS</text>
+    font-size="84"
+    font-weight="700"
+    fill="#7d7836">R</text>
   <text
-    x="2"
-    y="72"
+    x="115"
+    y="58"
+    font-family="'Cormorant Garamond', 'Garamond', 'Georgia', serif"
+    font-size="40"
+    font-weight="600"
+    letter-spacing="0.5"
+    fill="#2c2b16">Rawlins</text>
+  <text
+    x="115"
+    y="92"
     font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
-    font-size="14"
+    font-size="18"
     font-weight="500"
-    letter-spacing="6"
-    fill="#7a8074">ESTATES</text>
+    letter-spacing="4"
+    fill="#7d7836">ESTATES</text>
 </svg>

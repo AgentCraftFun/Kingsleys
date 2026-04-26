@@ -15,7 +15,11 @@ const sansFont = Inter({
   display: "swap",
 });
 
+const SITE_ORIGIN =
+  process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://propertyvaluationcalculator.co.uk";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_ORIGIN),
   title: "Property Intelligence Report",
   description:
     "A data-driven local market report for your property, powered by HM Land Registry data.",

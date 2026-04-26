@@ -1,10 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Ellis &amp; Co">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 110" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Ellis &amp; Co">
   <text
     x="0"
-    y="58"
-    font-family="'Cormorant Garamond', 'Garamond', 'Georgia', serif"
-    font-size="56"
-    font-weight="600"
+    y="62"
+    font-family="'Times New Roman', 'Garamond', serif"
+    font-size="64"
+    font-weight="700"
+    letter-spacing="-1"
+    fill="#1f4e79">ELLIS</text>
+  <text
+    x="180"
+    y="62"
+    font-family="'Times New Roman', 'Garamond', serif"
+    font-size="64"
+    font-weight="700"
+    letter-spacing="-1"
+    fill="#7eb9d9">&amp;</text>
+  <text
+    x="225"
+    y="62"
+    font-family="'Times New Roman', 'Garamond', serif"
+    font-size="64"
+    font-weight="700"
+    letter-spacing="-1"
+    fill="#1f4e79">CO</text>
+  <text
+    x="180"
+    y="98"
+    text-anchor="middle"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="22"
+    font-weight="400"
     letter-spacing="0.5"
-    fill="#a91d36">Ellis &amp; Co</text>
+    fill="#1f4e79">Sales &amp; Lettings</text>
 </svg>
