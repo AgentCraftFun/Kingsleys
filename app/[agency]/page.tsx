@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ctaPersonLabel, ctaPersonShort, getAgency } from "@/lib/branding";
+import { ctaPersonLabel, ctaPersonShort, getAgency, resolveAgencyLogoPath } from "@/lib/branding";
 import AgencyApp from "@/components/AgencyApp";
 
 type Params = { agency: string };
@@ -25,7 +25,7 @@ export default async function AgencyPage({
     ctaPersonShort: ctaPersonShort(agency),
     directorTitle: agency.directorTitle,
     hasNamedDirector: agency.directorName !== null,
-    logoPath: agency.logoPath,
+    logoPath: resolveAgencyLogoPath(agency),
     tagline: agency.tagline,
     postcodesInAgencyPatch: agency.postcodesInAgencyPatch,
     postcodesInValuationDB: agency.postcodesInValuationDB,

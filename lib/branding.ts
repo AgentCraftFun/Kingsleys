@@ -523,6 +523,32 @@ export function getAgency(slug: string): AgencyConfig | null {
   return agencyConfigs[slug.toLowerCase()] ?? null;
 }
 
+/**
+ * Server-side logo resolver. Prefers a real PNG ({slug}/logo.png) if you've
+ * dropped one into the public folder. Falls back to the SVG wordmark, then
+ * to whatever logoPath the config declares.
+ *
+ * This means: drag a logo.png into public/agencies/{slug}/ on GitHub, commit,
+ * and the page automatically uses it on the next build — no config edit
+ * needed.
+ */
+export function resolveAgencyLogoPath(agency: AgencyConfig): string {
+  if (typeof window !== "undefined") return agency.logoPath;
+  // Lazy require so this never runs in the browser.
+  const fs = require("node:fs") as typeof import("node:fs");
+  const path = require("node:path") as typeof import("node:path");
+  const publicRoot = path.resolve(process.cwd(), "public");
+  const candidates = [
+    `agencies/${agency.slug}/logo.png`,
+    `agencies/${agency.slug}/logo.svg`,
+    agency.logoPath.replace(/^\//, ""),
+  ];
+  for (const rel of candidates) {
+    if (fs.existsSync(path.join(publicRoot, rel))) return "/" + rel;
+  }
+  return agency.logoPath;
+}
+
 /** "Eyal Landau" or "the Ellis & Co Golders Green team" — used in CTAs. */
 export function ctaPersonLabel(agency: AgencyConfig): string {
   return agency.directorName ?? agency.directorFallback ?? `the ${agency.name} team`;

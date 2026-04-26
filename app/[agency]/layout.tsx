@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getAgency } from "@/lib/branding";
+import { getAgency, resolveAgencyLogoPath } from "@/lib/branding";
 import type { Metadata } from "next";
 
 type Params = { agency: string };
@@ -14,6 +14,7 @@ export async function generateMetadata({
   if (!agency) return { title: "Not found" };
 
   const title = agency.pageTitle ?? `Property Valuation — ${agency.name}, ${agency.area}`;
+  const logoPath = resolveAgencyLogoPath(agency);
   const description =
     agency.audience === "landlord"
       ? `Get a free Landlord Rental Report for your ${agency.area} property, prepared by ${agency.name} using HM Land Registry data and local lettings yields.`
@@ -30,7 +31,7 @@ export async function generateMetadata({
       url: `/${agency.slug}`,
       images: [
         {
-          url: agency.logoPath,
+          url: logoPath,
           alt: `${agency.name} logo`,
         },
       ],
@@ -39,7 +40,7 @@ export async function generateMetadata({
       card: "summary",
       title,
       description,
-      images: [agency.logoPath],
+      images: [logoPath],
     },
     alternates: {
       canonical: `/${agency.slug}`,
