@@ -76,8 +76,16 @@ export async function POST(req: Request) {
   // skip the calculator and return an "out-of-database" marker. The frontend
   // shows a friendly "we'll value this in person" path that still captures
   // the booking.
-  const inPatch = agency.postcodesInAgencyPatch.includes(district);
-  const inDb = agency.postcodesInValuationDB.includes(district);
+  //
+  // Match both the full district ("W1U") and the trailing-letter-stripped
+  // base ("W1"). Real vendor postcodes in central London use sub-letter
+  // districts like W1U, W1H, EC1A, SW1A which won't equal the "W1" or "EC1"
+  // entries in patch lists. The base-strip lets a config write "W1" and
+  // catch every W1x postcode a vendor might enter.
+  const districtBase = district.replace(/[A-Z]$/, "");
+  const matchesPatch = (p: string) => p === district || p === districtBase;
+  const inPatch = agency.postcodesInAgencyPatch.some(matchesPatch);
+  const inDb = agency.postcodesInValuationDB.some(matchesPatch);
   if (inPatch && !inDb) {
     return NextResponse.json({
       outOfDatabase: true,

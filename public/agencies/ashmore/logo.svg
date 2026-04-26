@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Ashmore &amp; Co Estate Agents">
+  <text
+    x="0"
+    y="56"
+    font-family="'Cormorant Garamond', 'Garamond', 'Georgia', serif"
+    font-size="56"
+    font-weight="600"
+    letter-spacing="0.5"
+    fill="#2a2e35">Ashmore</text>
+  <text
+    x="220"
+    y="56"
+    font-family="'Cormorant Garamond', 'Garamond', 'Georgia', serif"
+    font-style="italic"
+    font-size="56"
+    font-weight="500"
+    fill="#b59855">&amp;</text>
+  <text
+    x="252"
+    y="56"
+    font-family="'Cormorant Garamond', 'Garamond', 'Georgia', serif"
+    font-size="56"
+    font-weight="600"
+    letter-spacing="0.5"
+    fill="#2a2e35">Co</text>
+  <text
+    x="2"
+    y="86"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="14"
+    font-weight="500"
+    letter-spacing="6"
+    fill="#7a766b">ESTATE AGENTS · SINCE 1948</text>
+</svg>
