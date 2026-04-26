@@ -28,6 +28,39 @@ export type AgencyConfig = {
 };
 
 export const agencyConfigs: Record<string, AgencyConfig> = {
+  dreamview: {
+    slug: "dreamview",
+    name: "Dreamview Estates",
+    shortName: "Dreamview",
+    address: "34 Golders Green Road, London, NW11 8LL",
+    phone: "020 8455 0055",
+    email: "mail@dreamviewestates.co.uk",
+    website: "https://dreamviewestates.co.uk",
+    directorName: "Murray Lee",
+    directorFirstName: "Murray",
+    directorTitle: "Founder",
+    logoPath: "/agencies/dreamview/logo.png",
+    logoAspect: "wide",
+    colors: {
+      primary: "#5e1f2a",
+      primaryHover: "#501a24",
+      accent: "#7c8041",
+      bgSoft: "#faf6f1",
+      text: "#231518",
+      muted: "#6b6b6b",
+      border: "#e8dfd9",
+    },
+    tagline: "North West London's Award Winning Estate Agent",
+    postcodesCovered: ["NW11","NW4","NW3","NW2"],
+    rentalYieldByArea: {
+      NW11: 0.038,
+      NW4: 0.045,
+      NW3: 0.032,
+      NW2: 0.05,
+    },
+    defaultRentalYield: 0.04,
+    reportName: "Property Intelligence Report",
+  },
   kingsleys: {
     slug: "kingsleys",
     name: "Kingsleys Estates",
