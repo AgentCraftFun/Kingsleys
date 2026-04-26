@@ -46,7 +46,47 @@ export type AgencyConfig = {
   coverageHero?: string;
   /** Optional override for the Welcome coverage body line. Default: auto-formatted from postcodesInAgencyPatch. */
   coverageLine?: string;
+  /**
+   * Drives which numbers are emphasised in the report and what the CTA copy
+   * says. Vendor pages lead with sale price range and "30-minute valuation".
+   * Landlord pages lead with rental PCM and "landlord appraisal".
+   */
+  audience: "vendor" | "landlord";
+  /**
+   * Tone of the report page.
+   * - "standard" (default): the calculator IS the value prop alongside the
+   *   in-person CTA.
+   * - "preparation": the calculator is positioned as preparation reading for
+   *   the in-person visit. Price range is de-emphasised, comparables and
+   *   "what this can't see" are amplified. Used for agencies that publicly
+   *   campaign against AVMs (Winkworth).
+   */
+  framing: "standard" | "preparation";
+  /** Optional override for the Welcome H1 (default: "Discover what your home is really worth."). */
+  heroHeadline?: string;
+  /** Optional override for the Welcome intro paragraph. */
+  heroSubline?: string;
+  /** Fully custom <title> string. Default: "Property Valuation — {name}, {area}". */
+  pageTitle?: string;
+  /** Tag prepended to booking email subjects, e.g. "[RAWLINS — landlord lead]". */
+  emailSubjectTag?: string;
+  /** Header background: white (default) or the agency's primary colour (e.g. Winkworth, dark green). */
+  headerBg?: "white" | "primary";
+  /**
+   * Set true for agencies that should be EXCLUDED from the first-wave email
+   * sequence. Used by scripts/list-sendable.ts. Page is still buildable so
+   * the asset exists for later, but the slug is filtered out of any
+   * sending list.
+   */
+  doNotSendBeforeFirstReferences?: boolean;
 };
+
+/** Returns the slugs that should be in the first-wave outreach sequence. */
+export function sendableSlugs(): string[] {
+  return Object.values(agencyConfigs)
+    .filter((a) => !a.doNotSendBeforeFirstReferences)
+    .map((a) => a.slug);
+}
 
 export const agencyConfigs: Record<string, AgencyConfig> = {
   dreamview: {
@@ -84,6 +124,8 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     reportName: "Property Intelligence Report",
     area: "Golders Green",
     coverageHero: "Built for NW11 and the local NW patch.",
+    audience: "vendor",
+    framing: "standard",
   },
   kingsleys: {
     slug: "kingsleys",
@@ -122,6 +164,8 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     reportName: "Property Intelligence Report",
     area: "Golders Green",
     coverageHero: "Built for Golders Green.",
+    audience: "vendor",
+    framing: "standard",
   },
   gravity: {
     slug: "gravity",
@@ -167,6 +211,8 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     coverageHero: "Built for North-West London.",
     coverageLine:
       "Covering Golders Green, Hampstead, Hendon, Finchley, West Hampstead, Wembley, Harrow, Stanmore and surrounding NW and outer-West London postcodes.",
+    audience: "vendor",
+    framing: "standard",
   },
   ellisandco: {
     slug: "ellisandco",
@@ -206,6 +252,104 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     coverageHero: "Built for Golders Green and the surrounding area.",
     coverageLine:
       "Covering Golders Green (NW11), Hendon (NW4), Cricklewood (NW2), Hampstead (NW3) and Edgware (HA8).",
+    audience: "vendor",
+    framing: "standard",
+  },
+  rawlins: {
+    slug: "rawlins",
+    name: "Rawlins Estates",
+    shortName: "Rawlins",
+    address: "Unit 325, 78 Golders Green Road, London, NW11 8LN",
+    phone: "020 8371 0033",
+    email: "info@rawlinsestates.co.uk",
+    website: "https://www.rawlinsestates.co.uk",
+    directorName: "Rachel Elroy",
+    directorFirstName: "Rachel",
+    directorTitle: "Director",
+    logoPath: "/agencies/rawlins/logo.svg",
+    logoAspect: "wide",
+    colors: {
+      primary: "#2a3937",
+      primaryHover: "#1d2826",
+      accent: "#b88e5a",
+      bgSoft: "#f6f5f0",
+      text: "#1d2826",
+      muted: "#6f7370",
+      border: "#e3e0d8",
+    },
+    tagline: "Lettings and landlord-focused, NW London",
+    postcodesInAgencyPatch: ["NW11", "NW2", "NW6"],
+    postcodesInValuationDB: ["NW11", "NW2", "NW6"],
+    rentalYieldByArea: {
+      NW11: 0.038,
+      NW2: 0.05,
+      NW6: 0.04,
+    },
+    defaultRentalYield: 0.045,
+    reportName: "Landlord Rental Report",
+    area: "NW London",
+    coverageHero: "Built for landlords in NW London.",
+    coverageLine: "Covering NW11, NW2 and NW6 — focused on the NW London lettings market.",
+    audience: "landlord",
+    framing: "standard",
+    pageTitle: "Landlord Rental Report — Rawlins Estates, NW London",
+    emailSubjectTag: "[RAWLINS — landlord lead]",
+    heroHeadline: "What rent can your property achieve?",
+    heroSubline:
+      "A data-driven rental report for your NW London property, based on local lettings yields and HM Land Registry capital values. Free, no obligation — then, if you'd like, an in-person landlord appraisal with Rachel Elroy.",
+  },
+  /**
+   * DO NOT SEND THIS WEEK.
+   * Winkworth is a Tier 2 target. They publicly campaign against AVMs.
+   * Pitch only after 3+ Tier 1 references are landed.
+   * Different price bracket: £5-15k setup, £500-1000/month — not £1,750.
+   * Built only for completeness — exclude from the Monday email sequence.
+   */
+  winkworth: {
+    slug: "winkworth",
+    name: "Winkworth Golders Green",
+    shortName: "Winkworth",
+    address: "891 Finchley Road, London, NW11 8RR",
+    phone: "020 8458 8313",
+    email: "goldersgreen@winkworth.co.uk",
+    website: "https://www.winkworth.co.uk/estate-agents/golders-green",
+    directorName: "Graham Gold",
+    directorFirstName: "Graham",
+    directorTitle: "Sales Partner",
+    logoPath: "/agencies/winkworth/logo.svg",
+    logoAspect: "wide",
+    colors: {
+      primary: "#143728",
+      primaryHover: "#0d2a1d",
+      accent: "#d8c08a",
+      bgSoft: "#f6f4ee",
+      text: "#143728",
+      muted: "#5e6661",
+      border: "#dcd9d0",
+    },
+    tagline: "Local expertise, genuinely earned reviews — Golders Green",
+    postcodesInAgencyPatch: ["NW11", "NW3", "NW8"],
+    postcodesInValuationDB: ["NW11", "NW3", "NW8"],
+    rentalYieldByArea: {
+      NW11: 0.038,
+      NW3: 0.032,
+      NW8: 0.035,
+    },
+    defaultRentalYield: 0.035,
+    reportName: "Property Valuation Preparation",
+    area: "Golders Green",
+    coverageHero: "Built for the Hampstead and St John's Wood corridor.",
+    coverageLine:
+      "Covering Golders Green (NW11), Hampstead (NW3) and St John's Wood (NW8) — premium NW London sales and lettings.",
+    audience: "vendor",
+    framing: "preparation",
+    pageTitle: "Property Valuation Preparation — Winkworth Golders Green",
+    emailSubjectTag: "[WINKWORTH — preparation lead]",
+    headerBg: "primary",
+    heroHeadline: "What does the Land Registry data say about your street?",
+    heroSubline:
+      "Recent comparable sales near your home, drawn from public records — to inform your valuation appointment with Graham Gold. Online data alone can't replace an expert visit. This is the data your visit will discuss.",
+    doNotSendBeforeFirstReferences: true,
   },
 };
 

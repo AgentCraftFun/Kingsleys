@@ -30,6 +30,11 @@ export type PublicAgency = {
   coverageLine?: string;
   reportName: string;
   area: string;
+  audience: "vendor" | "landlord";
+  framing: "standard" | "preparation";
+  heroHeadline?: string;
+  heroSubline?: string;
+  headerBg: "white" | "primary";
 };
 
 export type FormState = {
@@ -201,10 +206,14 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
 
 function Header({ agency }: { agency: PublicAgency }) {
   const isSvg = agency.logoPath.toLowerCase().endsWith(".svg");
+  const onPrimary = agency.headerBg === "primary";
   return (
     <header
-      className="w-full border-b bg-white"
-      style={{ borderColor: "var(--agency-border)" }}
+      className="w-full border-b"
+      style={{
+        background: onPrimary ? "var(--agency-primary)" : "#ffffff",
+        borderColor: onPrimary ? "var(--agency-primary)" : "var(--agency-border)",
+      }}
     >
       <div className="max-w-5xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between gap-4">
         <a
@@ -235,7 +244,7 @@ function Header({ agency }: { agency: PublicAgency }) {
         <a
           href={`tel:${agency.phone.replace(/\s/g, "")}`}
           className="hidden sm:inline-flex items-center gap-2 text-sm font-medium"
-          style={{ color: "var(--agency-primary)" }}
+          style={{ color: onPrimary ? "#ffffff" : "var(--agency-primary)" }}
         >
           <PhoneIcon />
           {agency.phone}
@@ -243,7 +252,7 @@ function Header({ agency }: { agency: PublicAgency }) {
         <a
           href={`tel:${agency.phone.replace(/\s/g, "")}`}
           className="sm:hidden inline-flex items-center gap-1 text-xs font-medium"
-          style={{ color: "var(--agency-primary)" }}
+          style={{ color: onPrimary ? "#ffffff" : "var(--agency-primary)" }}
           aria-label={`Call ${agency.shortName}`}
         >
           <PhoneIcon />
@@ -325,9 +334,17 @@ function Welcome({
   const heroLine = agency.coverageHero ?? `Built for ${agency.postcodesInAgencyPatch[0]}.`;
   const coverageLine = formatCoverageLine(agency);
 
-  const intro = agency.hasNamedDirector
-    ? `A data-driven market report for your property in ${agency.area}, based on HM Land Registry sales. Free, no obligation — then, if you'd like, a personal valuation with ${agency.ctaPerson}.`
-    : `A data-driven market report for your property in ${agency.area}, based on HM Land Registry sales. Free, no obligation — then, if you'd like, an in-person valuation from ${agency.ctaPerson}.`;
+  const defaultHeadline =
+    agency.audience === "landlord"
+      ? "What rent can your property achieve?"
+      : "Discover what your home is really worth.";
+  const headline = agency.heroHeadline ?? defaultHeadline;
+
+  const defaultIntro =
+    agency.audience === "landlord"
+      ? `A data-driven rental report for your ${agency.area} property, based on local lettings yields and HM Land Registry capital values. Free, no obligation — then, if you'd like, an in-person landlord appraisal with ${agency.ctaPerson}.`
+      : `A data-driven market report for your property in ${agency.area}, based on HM Land Registry sales. Free, no obligation — then, if you'd like, ${agency.hasNamedDirector ? "a personal valuation with" : "an in-person valuation from"} ${agency.ctaPerson}.`;
+  const intro = agency.heroSubline ?? defaultIntro;
 
   return (
     <section className="w-full">
@@ -344,7 +361,7 @@ function Welcome({
           {agency.reportName}
         </div>
         <h1 className="text-4xl sm:text-6xl font-semibold leading-tight tracking-tight" style={{ color: "var(--agency-text)" }}>
-          Discover what your home<br className="hidden sm:block" /> is really worth.
+          {headline}
         </h1>
         <p className="mt-5 text-lg sm:text-xl" style={{ color: "var(--agency-muted)" }}>
           {intro}

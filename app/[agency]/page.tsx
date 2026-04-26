@@ -33,6 +33,11 @@ export default async function AgencyPage({
     coverageLine: agency.coverageLine,
     reportName: agency.reportName,
     area: agency.area,
+    audience: agency.audience,
+    framing: agency.framing,
+    heroHeadline: agency.heroHeadline,
+    heroSubline: agency.heroSubline,
+    headerBg: agency.headerBg ?? "white",
   };
 
   return <AgencyApp agency={publicAgency} />;

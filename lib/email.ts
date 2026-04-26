@@ -34,8 +34,10 @@ function getSectorOrDistrict(payload: BookingPayload): string {
 
 export function renderBookingEmailSubject(agency: AgencyConfig, payload: BookingPayload): string {
   const where = getSectorOrDistrict(payload) || "no postcode";
-  const tag = payload.outOfDb ? " [OUT-OF-DB, in patch]" : "";
-  return `New valuation request for ${agency.name}: ${payload.name} — ${where}${tag}`;
+  const oodTag = payload.outOfDb ? " [OUT-OF-DB, in patch]" : "";
+  const agencyTag = agency.emailSubjectTag ? `${agency.emailSubjectTag} ` : "";
+  const noun = agency.audience === "landlord" ? "appraisal" : "valuation";
+  return `${agencyTag}New ${noun} request for ${agency.name}: ${payload.name} — ${where}${oodTag}`;
 }
 
 export function renderBookingEmailHtml(agency: AgencyConfig, payload: BookingPayload): string {

@@ -12,8 +12,9 @@ export async function generateMetadata({
   const { agency: slug } = await params;
   const agency = getAgency(slug);
   if (!agency) return { title: "Not found" };
+  const title = agency.pageTitle ?? `Property Valuation — ${agency.name}, ${agency.area}`;
   return {
-    title: `Property Valuation — ${agency.name}, ${agency.area}`,
+    title,
     description: `A data-driven local market report for your property, prepared by ${agency.name}. Powered by HM Land Registry data.`,
   };
 }

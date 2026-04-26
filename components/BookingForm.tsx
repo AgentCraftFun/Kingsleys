@@ -71,15 +71,15 @@ export default function BookingForm({
         </button>
 
         <div className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--agency-muted)" }}>
-          Book your valuation
+          {agency.audience === "landlord" ? "Book your appraisal" : "Book your valuation"}
         </div>
         <h1 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight" style={{ color: "var(--agency-text)" }}>
           Meet with {agency.ctaPerson}.
         </h1>
         <p className="mt-3 text-base" style={{ color: "var(--agency-muted)" }}>
-          A free, no-obligation 30-minute visit. {agency.ctaPersonShort} will walk round the
-          property, refine the valuation, and leave you with a clear picture of what your home
-          could achieve on the open market.
+          {agency.audience === "landlord"
+            ? `A free, no-obligation 30-minute landlord appraisal. ${agency.ctaPersonShort} will walk round the property, advise on achievable rent and presentation, and leave you with a clear picture of what your investment can do.`
+            : `A free, no-obligation 30-minute visit. ${agency.ctaPersonShort} will walk round the property, refine the valuation, and leave you with a clear picture of what your home could achieve on the open market.`}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -163,7 +163,11 @@ export default function BookingForm({
               disabled={!valid || submitting}
               className="agency-btn-primary w-full sm:w-auto rounded-full px-8 py-4 text-base font-medium"
             >
-              {submitting ? "Sending…" : `Request my valuation with ${agency.ctaPersonShort}`}
+              {submitting
+                ? "Sending…"
+                : agency.audience === "landlord"
+                  ? `Request my landlord appraisal with ${agency.ctaPersonShort}`
+                  : `Request my valuation with ${agency.ctaPersonShort}`}
             </button>
             <p className="mt-3 text-xs" style={{ color: "var(--agency-muted)" }}>
               By submitting, you agree to {agency.name} getting in touch about your property. We won't share your details.
