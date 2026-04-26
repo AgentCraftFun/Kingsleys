@@ -135,6 +135,7 @@ ${yieldMap}
     },
     defaultRentalYield: 0.04,
     reportName: "Property Intelligence Report",
+    area: "${args.area || "Golders Green"}",
   },
 `;
 

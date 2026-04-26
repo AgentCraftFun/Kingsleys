@@ -8,7 +8,10 @@ const DB_PATH = path.join(DATA_DIR, "land-registry.db");
 
 const CSV_FILES = ["pp-2024.csv", "pp-2025.csv", "pp-monthly.csv"];
 
-const TARGET_DISTRICTS = new Set(["NW11", "NW4", "NW3", "NW2", "NW1", "NW5", "NW6", "NW7", "NW8", "NW9", "NW10"]);
+const TARGET_DISTRICTS = new Set([
+  "NW11", "NW4", "NW3", "NW2", "NW1", "NW5", "NW6", "NW7", "NW8", "NW9", "NW10",
+  "N6",
+]);
 
 function stripQuotes(s: string): string {
   if (s.startsWith('"') && s.endsWith('"')) return s.slice(1, -1);

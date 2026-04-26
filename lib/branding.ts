@@ -25,6 +25,7 @@ export type AgencyConfig = {
   rentalYieldByArea: Record<string, number>;
   defaultRentalYield: number;
   reportName: string;
+  area: string;
 };
 
 export const agencyConfigs: Record<string, AgencyConfig> = {
@@ -60,6 +61,7 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     },
     defaultRentalYield: 0.04,
     reportName: "Property Intelligence Report",
+    area: "Golders Green",
   },
   kingsleys: {
     slug: "kingsleys",
@@ -84,15 +86,18 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
       border: "#e5e5e0",
     },
     tagline: "Big Enough To Cope, Small Enough To Care",
-    postcodesCovered: ["NW11", "NW4", "NW3", "NW2"],
+    postcodesCovered: ["NW11", "N6", "NW2", "NW3", "NW4", "NW7"],
     rentalYieldByArea: {
       NW11: 0.038,
-      NW4: 0.045,
-      NW3: 0.032,
+      N6: 0.033,
       NW2: 0.05,
+      NW3: 0.032,
+      NW4: 0.045,
+      NW7: 0.04,
     },
     defaultRentalYield: 0.04,
     reportName: "Property Intelligence Report",
+    area: "Golders Green",
   },
 };
 
