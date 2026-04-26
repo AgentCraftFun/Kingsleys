@@ -59,7 +59,7 @@ export default function ReportView({
               <span>£{result.upperBound.toLocaleString()}</span>
             </div>
             <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--agency-muted)" }}>
-              An indicative band based only on public Land Registry data. {agency.directorFirstName}{" "}
+              An indicative band based only on public Land Registry data. {agency.ctaPersonShort}{" "}
               will refine this in person once they've seen the property, its condition, and the specifics
               of the local street.
             </p>
@@ -150,7 +150,7 @@ export default function ReportView({
             ))}
           </ul>
           <p className="mt-5 text-white/80 text-sm leading-relaxed">
-            For an accurate valuation that accounts for these, {agency.directorName} will visit in
+            For an accurate valuation that accounts for these, {agency.ctaPerson} will visit in
             person. Free, no obligation, and no pressure to list.
           </p>
         </div>
@@ -193,14 +193,14 @@ function BookCta({
           Ready for a proper valuation?
         </h3>
         <p className="mt-3 text-base" style={{ color: "var(--agency-muted)" }}>
-          Book a free, no-obligation 30-minute visit with {agency.directorName}, {agency.directorTitle} at {agency.name}. Over {agency.directorFirstName === "Eyal" ? "27 years" : "many years"} of experience valuing properties in {agency.postcodesCovered[0]}.
+          Book a free, no-obligation 30-minute visit with {agency.ctaPerson} at {agency.name}.
         </p>
         <button
           type="button"
           onClick={onBook}
           className="agency-btn-primary w-full sm:w-auto mt-6 rounded-full px-8 py-4 text-base font-medium"
         >
-          Book my free valuation with {agency.directorFirstName} →
+          Book my free valuation with {agency.ctaPersonShort} →
         </button>
       </div>
     );
@@ -216,7 +216,7 @@ function BookCta({
           Want a precise number?
         </div>
         <div className="text-sm" style={{ color: "var(--agency-muted)" }}>
-          Book a free in-person valuation with {agency.directorName}.
+          Book a free in-person valuation with {agency.ctaPerson}.
         </div>
       </div>
       <button

@@ -8,6 +8,7 @@ import {
   type BookingPayload,
 } from "@/lib/email";
 import type { ValuationResult } from "@/lib/valuation";
+import type { OutOfDatabaseResult } from "@/app/api/valuation/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,8 @@ type Body = {
   phone?: string;
   preferredTime?: string;
   message?: string;
-  result?: ValuationResult;
+  result?: ValuationResult | null;
+  outOfDatabase?: OutOfDatabaseResult | null;
 };
 
 export async function POST(req: Request) {
@@ -43,7 +45,10 @@ export async function POST(req: Request) {
   if (!name || name.length < 2) return NextResponse.json({ error: "Please enter your name" }, { status: 400 });
   if (!/\S+@\S+\.\S+/.test(email)) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   if (!phone || phone.length < 7) return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
-  if (!body.result || typeof body.result !== "object") {
+
+  const result = body.result ?? null;
+  const outOfDb = body.outOfDatabase ?? null;
+  if (!result && !outOfDb) {
     return NextResponse.json({ error: "Missing report context" }, { status: 400 });
   }
 
@@ -53,7 +58,8 @@ export async function POST(req: Request) {
     phone,
     preferredTime,
     message,
-    result: body.result,
+    result,
+    outOfDb,
   };
 
   const subject = renderBookingEmailSubject(agency, payload);
@@ -65,7 +71,6 @@ export async function POST(req: Request) {
   const resendKey = process.env.RESEND_API_KEY;
 
   if (!resendKey) {
-    // Dev fallback: log to server console so the flow is testable without a key.
     console.log("\n=== BOOKING REQUEST (no RESEND_API_KEY set) ===");
     console.log("To:", to);
     console.log("Subject:", subject);

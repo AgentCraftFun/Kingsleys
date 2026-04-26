@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ValuationResult } from "@/lib/valuation";
+import type { OutOfDatabaseResult } from "@/app/api/valuation/route";
 import type { PublicAgency } from "./AgencyApp";
 
 const PREFERRED_TIMES = [
@@ -16,12 +17,14 @@ const PREFERRED_TIMES = [
 export default function BookingForm({
   agency,
   result,
+  outOfDb,
   onCancel,
   onSubmit,
   error,
 }: {
   agency: PublicAgency;
-  result: ValuationResult;
+  result: ValuationResult | null;
+  outOfDb: OutOfDatabaseResult | null;
   onCancel: () => void;
   onSubmit: (data: {
     name: string;
@@ -32,6 +35,10 @@ export default function BookingForm({
   }) => Promise<void> | void;
   error: string | null;
 }) {
+  // Reference both props so unused-variable lint doesn't flag them; they're
+  // already consumed by the email payload server-side via AgencyApp.
+  void result;
+  void outOfDb;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -67,10 +74,10 @@ export default function BookingForm({
           Book your valuation
         </div>
         <h1 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight" style={{ color: "var(--agency-text)" }}>
-          Meet with {agency.directorName}.
+          Meet with {agency.ctaPerson}.
         </h1>
         <p className="mt-3 text-base" style={{ color: "var(--agency-muted)" }}>
-          A free, no-obligation 30-minute visit. {agency.directorFirstName} will walk round the
+          A free, no-obligation 30-minute visit. {agency.ctaPersonShort} will walk round the
           property, refine the valuation, and leave you with a clear picture of what your home
           could achieve on the open market.
         </p>
@@ -156,7 +163,7 @@ export default function BookingForm({
               disabled={!valid || submitting}
               className="agency-btn-primary w-full sm:w-auto rounded-full px-8 py-4 text-base font-medium"
             >
-              {submitting ? "Sending…" : `Request my valuation with ${agency.directorFirstName}`}
+              {submitting ? "Sending…" : `Request my valuation with ${agency.ctaPersonShort}`}
             </button>
             <p className="mt-3 text-xs" style={{ color: "var(--agency-muted)" }}>
               By submitting, you agree to {agency.name} getting in touch about your property. We won't share your details.

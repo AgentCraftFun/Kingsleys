@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getAgency } from "@/lib/branding";
+import { ctaPersonLabel, ctaPersonShort, getAgency } from "@/lib/branding";
 import AgencyApp from "@/components/AgencyApp";
 
 type Params = { agency: string };
@@ -21,13 +21,18 @@ export default async function AgencyPage({
     phone: agency.phone,
     email: agency.email,
     website: agency.website,
-    directorName: agency.directorName,
-    directorFirstName: agency.directorFirstName,
+    ctaPerson: ctaPersonLabel(agency),
+    ctaPersonShort: ctaPersonShort(agency),
     directorTitle: agency.directorTitle,
+    hasNamedDirector: agency.directorName !== null,
     logoPath: agency.logoPath,
     tagline: agency.tagline,
-    postcodesCovered: agency.postcodesCovered,
+    postcodesInAgencyPatch: agency.postcodesInAgencyPatch,
+    postcodesInValuationDB: agency.postcodesInValuationDB,
+    coverageHero: agency.coverageHero,
+    coverageLine: agency.coverageLine,
     reportName: agency.reportName,
+    area: agency.area,
   };
 
   return <AgencyApp agency={publicAgency} />;

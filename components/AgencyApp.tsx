@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import Image from "next/image";
 import type { ValuationResult, PropertyType, Condition } from "@/lib/valuation";
+import type { OutOfDatabaseResult } from "@/app/api/valuation/route";
 import ReportView from "./ReportView";
 import BookingForm from "./BookingForm";
 import StepForm from "./StepForm";
@@ -15,13 +16,20 @@ export type PublicAgency = {
   phone: string;
   email: string;
   website: string;
-  directorName: string;
-  directorFirstName: string;
+  /** "Eyal Landau" or "the Ellis & Co Golders Green team". */
+  ctaPerson: string;
+  /** "Eyal" or "the Ellis & Co Golders Green team". */
+  ctaPersonShort: string;
   directorTitle: string;
+  hasNamedDirector: boolean;
   logoPath: string;
   tagline: string;
-  postcodesCovered: string[];
+  postcodesInAgencyPatch: string[];
+  postcodesInValuationDB: string[];
+  coverageHero?: string;
+  coverageLine?: string;
   reportName: string;
+  area: string;
 };
 
 export type FormState = {
@@ -32,7 +40,7 @@ export type FormState = {
   features: string[];
 };
 
-type Step = "welcome" | "form" | "loading" | "report" | "booking" | "thanks";
+type Step = "welcome" | "form" | "loading" | "report" | "out-of-db" | "booking" | "thanks";
 
 const initialForm: FormState = {
   postcode: "",
@@ -46,6 +54,7 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
   const [step, setStep] = useState<Step>("welcome");
   const [form, setForm] = useState<FormState>(initialForm);
   const [result, setResult] = useState<ValuationResult | null>(null);
+  const [oodResult, setOodResult] = useState<OutOfDatabaseResult | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -64,9 +73,16 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
           const text = await res.text();
           throw new Error(text || "Unable to build your report right now.");
         }
-        const data = (await res.json()) as ValuationResult;
-        setResult(data);
-        setStep("report");
+        const data = (await res.json()) as ValuationResult | OutOfDatabaseResult;
+        if ("outOfDatabase" in data && data.outOfDatabase) {
+          setOodResult(data);
+          setResult(null);
+          setStep("out-of-db");
+        } else {
+          setResult(data as ValuationResult);
+          setOodResult(null);
+          setStep("report");
+        }
       } catch (e) {
         setSubmitError(e instanceof Error ? e.message : "Something went wrong.");
         setStep("form");
@@ -88,7 +104,12 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
         const res = await fetch("/api/book", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...data, result, agencySlug: agency.slug }),
+          body: JSON.stringify({
+            ...data,
+            result: result ?? null,
+            outOfDatabase: oodResult ?? null,
+            agencySlug: agency.slug,
+          }),
         });
         if (!res.ok) {
           const text = await res.text();
@@ -101,7 +122,7 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
         );
       }
     },
-    [result, agency.slug]
+    [result, oodResult, agency.slug]
   );
 
   return (
@@ -139,16 +160,34 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
             }}
             onRestart={() => {
               setResult(null);
+              setOodResult(null);
               setForm(initialForm);
               setStep("welcome");
             }}
           />
         )}
-        {step === "booking" && result && (
+        {step === "out-of-db" && oodResult && (
+          <OutOfDbView
+            agency={agency}
+            result={oodResult}
+            onBook={() => {
+              setBookingError(null);
+              setStep("booking");
+            }}
+            onRestart={() => {
+              setOodResult(null);
+              setResult(null);
+              setForm(initialForm);
+              setStep("welcome");
+            }}
+          />
+        )}
+        {step === "booking" && (
           <BookingForm
             agency={agency}
             result={result}
-            onCancel={() => setStep("report")}
+            outOfDb={oodResult}
+            onCancel={() => setStep(result ? "report" : "out-of-db")}
             onSubmit={handleBookingSubmit}
             error={bookingError}
           />
@@ -161,6 +200,7 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
 }
 
 function Header({ agency }: { agency: PublicAgency }) {
+  const isSvg = agency.logoPath.toLowerCase().endsWith(".svg");
   return (
     <header
       className="w-full border-b bg-white"
@@ -174,14 +214,23 @@ function Header({ agency }: { agency: PublicAgency }) {
           className="flex items-center gap-3 min-w-0"
           aria-label={`${agency.name} home`}
         >
-          <Image
-            src={agency.logoPath}
-            alt={agency.name}
-            width={200}
-            height={30}
-            priority
-            className="h-6 sm:h-7 w-auto"
-          />
+          {isSvg ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={agency.logoPath}
+              alt={agency.name}
+              className="h-7 sm:h-8 w-auto"
+            />
+          ) : (
+            <Image
+              src={agency.logoPath}
+              alt={agency.name}
+              width={200}
+              height={30}
+              priority
+              className="h-6 sm:h-7 w-auto"
+            />
+          )}
         </a>
         <a
           href={`tel:${agency.phone.replace(/\s/g, "")}`}
@@ -240,7 +289,7 @@ function Footer({ agency }: { agency: PublicAgency }) {
             </div>
             <p className="text-xs leading-relaxed">
               Property Intelligence Reports are prepared using HM Land Registry Price Paid Data.
-              Ranges are indicative and do not replace an in-person valuation by {agency.directorName}.
+              Ranges are indicative and do not replace an in-person valuation by {agency.ctaPerson}.
             </p>
           </div>
         </div>
@@ -255,6 +304,15 @@ function Footer({ agency }: { agency: PublicAgency }) {
   );
 }
 
+function formatCoverageLine(agency: PublicAgency): React.ReactNode {
+  if (agency.coverageLine) return agency.coverageLine;
+  const list = agency.postcodesInAgencyPatch;
+  if (list.length === 0) return "";
+  if (list.length === 1) return `Covering ${list[0]}.`;
+  if (list.length === 2) return `Covering ${list[0]} and ${list[1]}.`;
+  return `Covering ${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}.`;
+}
+
 function Welcome({
   agency,
   onStart,
@@ -264,6 +322,13 @@ function Welcome({
   onStart: () => void;
   submitError: string | null;
 }) {
+  const heroLine = agency.coverageHero ?? `Built for ${agency.postcodesInAgencyPatch[0]}.`;
+  const coverageLine = formatCoverageLine(agency);
+
+  const intro = agency.hasNamedDirector
+    ? `A data-driven market report for your property in ${agency.area}, based on HM Land Registry sales. Free, no obligation — then, if you'd like, a personal valuation with ${agency.ctaPerson}.`
+    : `A data-driven market report for your property in ${agency.area}, based on HM Land Registry sales. Free, no obligation — then, if you'd like, an in-person valuation from ${agency.ctaPerson}.`;
+
   return (
     <section className="w-full">
       <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-10 sm:pt-20 pb-10">
@@ -282,9 +347,7 @@ function Welcome({
           Discover what your home<br className="hidden sm:block" /> is really worth.
         </h1>
         <p className="mt-5 text-lg sm:text-xl" style={{ color: "var(--agency-muted)" }}>
-          A data-driven market report for your {agency.postcodesCovered[0]} property, based on HM Land
-          Registry sales. Free, no obligation — then, if you'd like, a personal valuation with{" "}
-          {agency.directorName}.
+          {intro}
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
@@ -318,11 +381,10 @@ function Welcome({
             body="Never a single number. We show the realistic band a buyer is likely to pay."
           />
           <TrustTile
-            title={`Built for ${agency.postcodesCovered[0]}`}
+            title={heroLine}
             bodyNode={
               <>
-                Covering {agency.postcodesCovered.slice(0, -1).join(", ")} and {agency.postcodesCovered.slice(-1)}.
-                Prepared by {agency.name} —{" "}
+                {coverageLine} Prepared by {agency.name} —{" "}
                 <span className="italic">{agency.tagline}.</span>
               </>
             }
@@ -376,6 +438,80 @@ function Loading({ agency }: { agency: PublicAgency }) {
   );
 }
 
+function OutOfDbView({
+  agency,
+  result,
+  onBook,
+  onRestart,
+}: {
+  agency: PublicAgency;
+  result: OutOfDatabaseResult;
+  onBook: () => void;
+  onRestart: () => void;
+}) {
+  return (
+    <section className="w-full">
+      <div className="max-w-2xl mx-auto px-5 sm:px-8 pt-10 sm:pt-16 pb-12">
+        <div className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: "var(--agency-muted)" }}>
+          {agency.reportName}
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight leading-tight" style={{ color: "var(--agency-text)" }}>
+          Your postcode is in {agency.shortName}'s patch — but needs an in-person look.
+        </h1>
+        <p className="mt-4 text-base sm:text-lg" style={{ color: "var(--agency-muted)" }}>
+          {agency.name} covers <span className="font-medium" style={{ color: "var(--agency-text)" }}>{result.district}</span>, but our online comparable database is currently focused on NW postcodes. Submit your details and {agency.ctaPerson} will give you a full valuation in person — usually within a few working days.
+        </p>
+
+        <div className="mt-8 rounded-2xl border p-5 sm:p-6" style={{ borderColor: "var(--agency-border)", background: "#ffffff" }}>
+          <div className="text-sm font-medium uppercase tracking-wider" style={{ color: "var(--agency-muted)" }}>
+            What we have on your property
+          </div>
+          <dl className="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm" style={{ color: "var(--agency-text)" }}>
+            <div className="flex justify-between"><dt style={{ color: "var(--agency-muted)" }}>Postcode</dt><dd>{result.input.postcode}</dd></div>
+            <div className="flex justify-between"><dt style={{ color: "var(--agency-muted)" }}>Type</dt><dd>{propertyTypeLabel(result.input.propertyType)}</dd></div>
+            <div className="flex justify-between"><dt style={{ color: "var(--agency-muted)" }}>Bedrooms</dt><dd>{result.input.bedrooms}</dd></div>
+            <div className="flex justify-between"><dt style={{ color: "var(--agency-muted)" }}>Condition</dt><dd>{conditionLabel(result.input.condition)}</dd></div>
+          </dl>
+        </div>
+
+        <div className="mt-8">
+          <button
+            onClick={onBook}
+            className="agency-btn-primary w-full sm:w-auto rounded-full px-8 py-4 text-base font-medium"
+          >
+            Book my in-person valuation →
+          </button>
+        </div>
+
+        <div className="mt-8 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onRestart}
+            className="text-sm underline underline-offset-4"
+            style={{ color: "var(--agency-muted)" }}
+          >
+            Start a new report
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function propertyTypeLabel(t: "F" | "T" | "S" | "D"): string {
+  return ({ F: "Flat / Maisonette", T: "Terraced house", S: "Semi-detached house", D: "Detached house" })[t];
+}
+function conditionLabel(c: "needs-work" | "good" | "excellent" | "renovated"): string {
+  return (
+    {
+      "needs-work": "Needs modernising",
+      good: "Good condition",
+      excellent: "Excellent condition",
+      renovated: "Recently renovated",
+    } as const
+  )[c];
+}
+
 function ThankYou({ agency }: { agency: PublicAgency }) {
   return (
     <section className="max-w-2xl mx-auto px-5 sm:px-8 py-16 sm:py-24 text-center">
@@ -397,8 +533,8 @@ function ThankYou({ agency }: { agency: PublicAgency }) {
         Booking request sent.
       </h2>
       <p className="mt-4 text-base sm:text-lg" style={{ color: "var(--agency-muted)" }}>
-        {agency.directorName} will be in touch shortly to confirm a time that works
-        for you. In the meantime, if you'd like to speak sooner, call{" "}
+        {agency.ctaPerson} will be in touch shortly to confirm a time that works for you. In the
+        meantime, if you'd like to speak sooner, call{" "}
         <a
           href={`tel:${agency.phone.replace(/\s/g, "")}`}
           className="underline underline-offset-4"

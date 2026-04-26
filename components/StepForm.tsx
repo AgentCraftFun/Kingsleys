@@ -77,8 +77,7 @@ export default function StepForm({
   const outsideArea =
     postcodeValid &&
     postcodeDistrict &&
-    !agency.postcodesCovered.includes(postcodeDistrict) &&
-    !postcodeDistrict.startsWith("NW");
+    !agency.postcodesInAgencyPatch.includes(postcodeDistrict);
 
   const canContinue = () => {
     switch (step) {
@@ -164,8 +163,8 @@ export default function StepForm({
                       border: "1px solid #f5e6b0",
                     }}
                   >
-                    {agency.shortName} specialises in {agency.postcodesCovered.slice(0, -1).join(", ")} and{" "}
-                    {agency.postcodesCovered.slice(-1)}. You can still continue — we'll use the
+                    {agency.shortName} specialises in {agency.postcodesInAgencyPatch.slice(0, -1).join(", ")} and{" "}
+                    {agency.postcodesInAgencyPatch.slice(-1)}. You can still continue — we'll use the
                     wider London comparables.
                   </div>
                 )}
