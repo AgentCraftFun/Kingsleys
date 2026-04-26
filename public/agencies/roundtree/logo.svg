@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 90" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Roundtree Real Estate">
+  <text
+    x="0"
+    y="48"
+    font-family="'Cormorant Garamond', 'Garamond', 'Georgia', serif"
+    font-size="44"
+    font-weight="600"
+    letter-spacing="0.5"
+    fill="#1f2c2a">Roundtree</text>
+  <text
+    x="2"
+    y="76"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="16"
+    font-weight="500"
+    letter-spacing="5"
+    fill="#5a6663">REAL ESTATE</text>
+</svg>

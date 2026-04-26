@@ -258,23 +258,27 @@ function Header({ agency }: { agency: PublicAgency }) {
             />
           )}
         </a>
-        <a
-          href={`tel:${agency.phone.replace(/\s/g, "")}`}
-          className="hidden sm:inline-flex items-center gap-2 text-sm font-medium"
-          style={{ color: onPrimary ? "#ffffff" : "var(--agency-primary)" }}
-        >
-          <PhoneIcon />
-          {agency.phone}
-        </a>
-        <a
-          href={`tel:${agency.phone.replace(/\s/g, "")}`}
-          className="sm:hidden inline-flex items-center gap-1 text-xs font-medium"
-          style={{ color: onPrimary ? "#ffffff" : "var(--agency-primary)" }}
-          aria-label={`Call ${agency.shortName}`}
-        >
-          <PhoneIcon />
-          Call
-        </a>
+        {agency.phone && agency.phone.trim().length > 0 && (
+          <>
+            <a
+              href={`tel:${agency.phone.replace(/\s/g, "")}`}
+              className="hidden sm:inline-flex items-center gap-2 text-sm font-medium"
+              style={{ color: onPrimary ? "#ffffff" : "var(--agency-primary)" }}
+            >
+              <PhoneIcon />
+              {agency.phone}
+            </a>
+            <a
+              href={`tel:${agency.phone.replace(/\s/g, "")}`}
+              className="sm:hidden inline-flex items-center gap-1 text-xs font-medium"
+              style={{ color: onPrimary ? "#ffffff" : "var(--agency-primary)" }}
+              aria-label={`Call ${agency.shortName}`}
+            >
+              <PhoneIcon />
+              Call
+            </a>
+          </>
+        )}
       </div>
     </header>
   );
@@ -298,16 +302,25 @@ function Footer({ agency }: { agency: PublicAgency }) {
             <div className="font-semibold mb-1" style={{ color: "var(--agency-text)" }}>
               Contact
             </div>
-            <div>
-              <a href={`tel:${agency.phone.replace(/\s/g, "")}`} className="underline-offset-2 hover:underline">
-                {agency.phone}
-              </a>
-            </div>
-            <div>
-              <a href={`mailto:${agency.email}`} className="underline-offset-2 hover:underline">
-                {agency.email}
-              </a>
-            </div>
+            {agency.phone && agency.phone.trim().length > 0 && (
+              <div>
+                <a href={`tel:${agency.phone.replace(/\s/g, "")}`} className="underline-offset-2 hover:underline">
+                  {agency.phone}
+                </a>
+              </div>
+            )}
+            {agency.email && agency.email.trim().length > 0 && (
+              <div>
+                <a href={`mailto:${agency.email}`} className="underline-offset-2 hover:underline">
+                  {agency.email}
+                </a>
+              </div>
+            )}
+            {(!agency.phone || !agency.email) && (
+              <div className="text-xs italic" style={{ color: "var(--agency-muted)" }}>
+                Contact details on {agency.shortName}'s site.
+              </div>
+            )}
           </div>
           <div>
             <div className="font-semibold mb-1" style={{ color: "var(--agency-text)" }}>
@@ -567,16 +580,20 @@ function ThankYou({ agency }: { agency: PublicAgency }) {
         Booking request sent.
       </h2>
       <p className="mt-4 text-base sm:text-lg" style={{ color: "var(--agency-muted)" }}>
-        {agency.ctaPerson} will be in touch shortly to confirm a time that works for you. In the
-        meantime, if you'd like to speak sooner, call{" "}
-        <a
-          href={`tel:${agency.phone.replace(/\s/g, "")}`}
-          className="underline underline-offset-4"
-          style={{ color: "var(--agency-primary)" }}
-        >
-          {agency.phone}
-        </a>
-        .
+        {agency.ctaPerson} will be in touch shortly to confirm a time that works for you.
+        {agency.phone && agency.phone.trim().length > 0 && (
+          <>
+            {" In the meantime, if you'd like to speak sooner, call "}
+            <a
+              href={`tel:${agency.phone.replace(/\s/g, "")}`}
+              className="underline underline-offset-4"
+              style={{ color: "var(--agency-primary)" }}
+            >
+              {agency.phone}
+            </a>
+            .
+          </>
+        )}
       </p>
     </section>
   );
