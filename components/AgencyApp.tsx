@@ -213,16 +213,16 @@ function Header({ agency }: { agency: PublicAgency }) {
   // logos are legible at the same visual weight as a wide wordmark.
   const logoSizeClass =
     agency.logoAspect === "tall"
-      ? "h-12 sm:h-16 w-auto max-w-[5rem] sm:max-w-[6rem]"
+      ? "h-16 sm:h-24 w-auto max-w-[6rem] sm:max-w-[7.5rem]"
       : agency.logoAspect === "square"
-        ? "h-10 sm:h-14 w-auto"
-        : "h-8 sm:h-10 w-auto";
+        ? "h-14 sm:h-20 w-auto"
+        : "h-9 sm:h-12 w-auto";
 
   // Header padding tightens for taller logos so they don't blow up the bar.
   const headerPaddingClass =
     agency.logoAspect === "tall" || agency.logoAspect === "square"
       ? "py-3 sm:py-4"
-      : "py-4";
+      : "py-4 sm:py-5";
 
   return (
     <header
