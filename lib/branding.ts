@@ -508,11 +508,11 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     heroHeadline: "What's your Hendon home worth?",
   },
   /**
-   * DO NOT SEND THIS WEEK.
-   * Winkworth is a Tier 2 target. They publicly campaign against AVMs.
-   * Pitch only after 3+ Tier 1 references are landed.
-   * Different price bracket: £5-15k setup, £500-1000/month — not £1,750.
-   * Built only for completeness — exclude from the Monday email sequence.
+   * Tier 2 — was previously gated behind doNotSendBeforeFirstReferences
+   * pending Tier 1 references. Cleared as of agency 12 onboarding;
+   * Winkworth is now in the first-wave sendable list. Note for future:
+   * Winkworth's price bracket is materially higher than the rest
+   * (£5–15k setup, £500–1000/month vs £1,750/£150) — pitch accordingly.
    */
   winkworth: {
     slug: "winkworth",
@@ -557,7 +557,56 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     heroHeadline: "What does the Land Registry data say about your street?",
     heroSubline:
       "Recent comparable sales near your home, drawn from public records — to inform your valuation appointment with Graham Gold. Online data alone can't replace an expert visit. This is the data your visit will discuss.",
-    doNotSendBeforeFirstReferences: true,
+  },
+  orient: {
+    slug: "orient",
+    name: "Orient Estates",
+    shortName: "Orient",
+    address: "5 Watford Way, Hendon, London, NW4 3JL",
+    phone: "020 8202 6888",
+    email: "hello@orientestates.co.uk",
+    website: "https://www.orientestates.co.uk",
+    directorName: null,
+    directorFirstName: null,
+    directorTitle: "Branch team",
+    directorFallback: "the Orient Estates team",
+    logoPath: "/agencies/orient/logo.png",
+    logoAspect: "wide",
+    colors: {
+      primary: "#df4a43",
+      primaryHover: "#b83a34",
+      accent: "#1c1c1c",
+      bgSoft: "#faf3f3",
+      text: "#1c1c1c",
+      muted: "#74777c",
+      border: "#ecdcda",
+    },
+    tagline: "Sales, lettings and management across NW and Central London",
+    postcodesInAgencyPatch: [
+      "NW3", "NW4", "NW7", "NW9", "NW11",
+      "N10", "N12",
+      "E14", "SE1", "W1",
+    ],
+    postcodesInValuationDB: ["NW3", "NW4", "NW7", "NW9", "NW11"],
+    rentalYieldByArea: {
+      NW3: 0.032,
+      NW4: 0.045,
+      NW7: 0.04,
+      NW9: 0.045,
+      NW11: 0.038,
+    },
+    defaultRentalYield: 0.04,
+    reportName: "Property Intelligence Report",
+    area: "Hendon",
+    coverageHero: "Built for North West London.",
+    coverageLine:
+      "Covering Hendon (NW4), Mill Hill (NW7), Colindale (NW9), Golders Green (NW11), Hampstead (NW3), Finchley (N12), Muswell Hill (N10), and Central London (E14, SE1, W1).",
+    audience: "vendor",
+    framing: "standard",
+    pageTitle: "Property Valuation, Orient Estates, Hendon",
+    emailSubjectTag: "[ORIENT, vendor lead]",
+    headerBg: "primary",
+    heroHeadline: "What's your North West London home worth?",
   },
 };
 
