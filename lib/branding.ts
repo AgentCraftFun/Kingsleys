@@ -525,8 +525,8 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     directorName: "Graham Gold",
     directorFirstName: "Graham",
     directorTitle: "Sales Partner",
-    logoPath: "/agencies/winkworth/logo.svg",
-    logoAspect: "square",
+    logoPath: "/agencies/winkworth/logo.png",
+    logoAspect: "wide",
     colors: {
       primary: "#14142b",
       primaryHover: "#0a0a1a",
