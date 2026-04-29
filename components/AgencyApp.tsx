@@ -197,6 +197,14 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
             onBook={() => {
               setBookingError(null);
               setStep("booking");
+              // The booking step replaces the long report/OOD view.
+              // Without an explicit scroll the new view inherits the
+              // previous step's scroll position, so the user lands
+              // halfway down the calendar / form rather than at the
+              // top. Snap to top on every step transition into booking.
+              if (typeof window !== "undefined") {
+                window.scrollTo({ top: 0, behavior: "auto" });
+              }
             }}
             onRestart={() => {
               setResult(null);
@@ -213,6 +221,14 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
             onBook={() => {
               setBookingError(null);
               setStep("booking");
+              // The booking step replaces the long report/OOD view.
+              // Without an explicit scroll the new view inherits the
+              // previous step's scroll position, so the user lands
+              // halfway down the calendar / form rather than at the
+              // top. Snap to top on every step transition into booking.
+              if (typeof window !== "undefined") {
+                window.scrollTo({ top: 0, behavior: "auto" });
+              }
             }}
             onRestart={() => {
               setOodResult(null);
@@ -370,6 +386,12 @@ function Footer({ agency }: { agency: PublicAgency }) {
             <div className="font-semibold mb-1" style={{ color: "var(--agency-text)" }}>
               About this report
             </div>
+            {agency.allowAudienceSwitch && (
+              <p className="text-xs leading-relaxed mb-2" style={{ color: "var(--agency-text)" }}>
+                Every report ends with the option to book an in-person valuation with{" "}
+                {agency.ctaPerson} at the property. No pressure. No hard sell.
+              </p>
+            )}
             <p className="text-xs leading-relaxed">
               Property Intelligence Reports are prepared using HM Land Registry Price Paid Data.
               Ranges are indicative and do not replace an in-person valuation by {agency.ctaPerson}.
@@ -418,20 +440,27 @@ function Welcome({
     agency.audience === "landlord"
       ? "What rent can your property achieve?"
       : "Discover what your home is really worth.";
-  // For agencies with the audience switch, we override the configured
-  // heroHeadline (which is single-audience by definition) with a neutral
-  // one that reads as a natural continuation from the agency's own
-  // "Request a Valuation" CTA on their homepage.
+  // For agencies with the audience switch, the welcome copy is a tighter,
+  // more direct continuation from the agency's homepage CTA. Single-
+  // audience agencies keep their per-config headline + intro untouched.
   const headline = allowAudienceSwitch
-    ? `Welcome. What's your valuation for?`
+    ? "What's your property actually worth right now?"
     : (agency.heroHeadline ?? defaultHeadline);
 
   const defaultIntro =
     agency.audience === "landlord"
       ? `A data-driven rental report for your ${agency.area} property, based on local lettings yields and HM Land Registry capital values. Free, no obligation — then, if you'd like, an in-person landlord appraisal with ${agency.ctaPerson}.`
       : `A data-driven market report for your property in ${agency.area}, based on HM Land Registry sales. Free, no obligation — then, if you'd like, ${agency.hasNamedDirector ? "a personal valuation with" : "an in-person valuation from"} ${agency.ctaPerson}.`;
-  const switchIntro = `Pick the right track and ${agency.shortName} will pull the relevant HM Land Registry data for you. Both reports are free, no obligation, and end with an in-person appointment with ${agency.ctaPerson} at the property.`;
+  const switchIntro =
+    "Get a valuation based on real HM Land Registry sales data for your street. Not an algorithm guess. Not a Zoopla estimate. Actual comparable sales from your area.";
   const intro = allowAudienceSwitch ? switchIntro : (agency.heroSubline ?? defaultIntro);
+
+  // Badge text: single-audience agencies show their reportName (e.g.
+  // "Property Intelligence Report"). Audience-switch agencies show a
+  // friction-reducing "Free. No obligation." pitch instead.
+  const badge = allowAudienceSwitch
+    ? "Free. No obligation. Takes 60 seconds."
+    : agency.reportName;
 
   return (
     <section className="w-full">
@@ -445,7 +474,7 @@ function Welcome({
           }}
         >
           <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: "var(--agency-accent)" }} />
-          {agency.reportName}
+          {badge}
         </div>
         <h1 className="text-4xl sm:text-6xl font-semibold leading-tight tracking-tight" style={{ color: "var(--agency-text)" }}>
           {headline}
@@ -457,16 +486,16 @@ function Welcome({
         {allowAudienceSwitch ? (
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <AudiencePickerCard
-              eyebrow="Sales"
-              title="What my home would sell for"
-              body="HM Land Registry comparables for your street and postcode sector, plus a defensible price range."
+              title="I want to sell"
+              body="See what similar homes on your street have actually sold for. You'll get 3 to 5 verified comparable sales and a realistic price range, not a single made-up number."
+              cta="Get my sales valuation →"
               selected={selectedAudience === "vendor"}
               onClick={() => onPickAudience("vendor")}
             />
             <AudiencePickerCard
-              eyebrow="Lettings"
-              title="What my property would rent for"
-              body="Local lettings yields applied to current capital values, giving achievable PCM and gross yield."
+              title="I want to let"
+              body="See what your property could achieve per month based on current local yields. You'll get an achievable PCM figure and gross yield backed by real data."
+              cta="Get my rental valuation →"
               selected={selectedAudience === "landlord"}
               onClick={() => onPickAudience("landlord")}
             />
@@ -495,23 +524,48 @@ function Welcome({
         )}
 
         <div className="mt-16 grid sm:grid-cols-3 gap-4 sm:gap-6">
-          <TrustTile
-            title="Real comparable sales"
-            body="Three to five recent, verified sales on your street or postcode sector."
-          />
-          <TrustTile
-            title="A defensible range"
-            body="Never a single number. We show the realistic band a buyer is likely to pay."
-          />
-          <TrustTile
-            title={heroLine}
-            bodyNode={
-              <>
-                {coverageLine} Prepared by {agency.name} —{" "}
-                <span className="italic">{agency.tagline}.</span>
-              </>
-            }
-          />
+          {allowAudienceSwitch ? (
+            <>
+              <TrustTile
+                title="Real comparable sales"
+                body="3 to 5 recent, verified sales on your street or postcode sector. Real transactions, not estimates."
+              />
+              <TrustTile
+                title="A defensible range"
+                body="We don't give you a magic number. You get the realistic band a buyer or tenant would actually pay."
+              />
+              <TrustTile
+                title={heroLine}
+                bodyNode={
+                  <>
+                    Golders Green, Hampstead, Hendon, Finchley, West Hampstead, Wembley,
+                    Harrow, Stanmore and surrounding areas. This isn't a national tool.
+                    It's built specifically for your market. Prepared by {agency.name}.
+                  </>
+                }
+              />
+            </>
+          ) : (
+            <>
+              <TrustTile
+                title="Real comparable sales"
+                body="Three to five recent, verified sales on your street or postcode sector."
+              />
+              <TrustTile
+                title="A defensible range"
+                body="Never a single number. We show the realistic band a buyer is likely to pay."
+              />
+              <TrustTile
+                title={heroLine}
+                bodyNode={
+                  <>
+                    {coverageLine} Prepared by {agency.name} —{" "}
+                    <span className="italic">{agency.tagline}.</span>
+                  </>
+                }
+              />
+            </>
+          )}
         </div>
       </div>
     </section>
@@ -522,24 +576,28 @@ function AudiencePickerCard({
   eyebrow,
   title,
   body,
+  cta,
   selected,
   onClick,
 }: {
-  eyebrow: string;
+  /** Optional small-caps line above the title. Omit to render title only. */
+  eyebrow?: string;
   title: string;
   body: string;
+  /** CTA text shown beneath the body, e.g. "Get my sales valuation →". */
+  cta: string;
   selected: boolean;
   onClick: () => void;
 }) {
-  // Visual press feedback: Tailwind's active: variant gives an immediate
-  // CSS response before any React re-render, so the card feels tactile
-  // even on the first tap. Hover lift on desktop adds a separate cue
-  // that this is interactive.
+  // Visual press feedback: snappier than the previous 0.985 scale —
+  // user explicitly wanted this to feel like a button press, not a
+  // hover hint. Hover lift on desktop adds a separate cue that this
+  // is interactive. motion-reduce respects the OS preference.
   return (
     <button
       type="button"
       onClick={onClick}
-      className="text-left w-full rounded-2xl p-5 sm:p-6 transition-all duration-150 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985] active:shadow-inner motion-reduce:transform-none cursor-pointer"
+      className="text-left w-full rounded-2xl p-5 sm:p-6 transition-all duration-100 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] active:shadow-inner motion-reduce:transform-none cursor-pointer"
       style={{
         background: "#ffffff",
         border: `2px solid ${selected ? "var(--agency-primary)" : "var(--agency-border)"}`,
@@ -548,14 +606,16 @@ function AudiencePickerCard({
           : "0 1px 2px rgba(0,0,0,0.04)",
       }}
     >
+      {eyebrow && (
+        <div
+          className="text-xs font-medium uppercase tracking-wider mb-2"
+          style={{ color: "var(--agency-accent)" }}
+        >
+          {eyebrow}
+        </div>
+      )}
       <div
-        className="text-xs font-medium uppercase tracking-wider mb-2"
-        style={{ color: "var(--agency-accent)" }}
-      >
-        {eyebrow}
-      </div>
-      <div
-        className="text-lg sm:text-xl font-semibold leading-snug mb-2"
+        className="text-xl sm:text-2xl font-semibold leading-snug mb-2"
         style={{ color: "var(--agency-text)" }}
       >
         {title}
@@ -567,7 +627,7 @@ function AudiencePickerCard({
         className="mt-4 inline-flex items-center gap-1 text-sm font-medium"
         style={{ color: "var(--agency-primary)" }}
       >
-        Start this report →
+        {cta}
       </div>
     </button>
   );
