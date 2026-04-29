@@ -240,16 +240,37 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
       "N2", "N3", "W5", "WD6",
     ],
     postcodesInValuationDB: ["NW2", "NW3", "NW4", "NW6", "NW9", "NW10", "NW11"],
+    // Gross yield bands by postcode area, calibrated to 2026 NW London
+    // market data. Previous values (NW11 0.038, NW3 0.032 etc.) were
+    // pulling implied PCM 15-25% below actual Rightmove listings, which
+    // a landlord-side prospect would clock immediately. NW1 / NW5 / HA*
+    // included for completeness even though they're outside Gravity's
+    // current postcodesInValuationDB — keeps the table ready if the
+    // valuation DB ever expands without a config edit.
     rentalYieldByArea: {
-      NW2: 0.05,
-      NW3: 0.032,
-      NW4: 0.045,
-      NW6: 0.04,
-      NW9: 0.045,
-      NW10: 0.05,
-      NW11: 0.038,
+      // Prime Hampstead / Hampstead Garden Suburb — lowest yields
+      NW3: 0.042,
+      NW11: 0.045,
+      // Outer-prime — mid yields
+      NW2: 0.048,
+      NW4: 0.048,
+      NW7: 0.048,
+      NW6: 0.047,
+      // Outer London — higher yields
+      NW1: 0.046,
+      NW5: 0.046,
+      NW9: 0.052,
+      NW10: 0.053,
+      // HA postcodes (Wembley, Harrow, Stanmore, Edgware) — highest yields
+      HA0: 0.055,
+      HA1: 0.054,
+      HA2: 0.054,
+      HA3: 0.055,
+      HA7: 0.052,
+      HA8: 0.053,
+      HA9: 0.057,
     },
-    defaultRentalYield: 0.045,
+    defaultRentalYield: 0.048,
     reportName: "Property Intelligence Report",
     area: "Golders Green",
     coverageHero: "Built for North-West London.",
