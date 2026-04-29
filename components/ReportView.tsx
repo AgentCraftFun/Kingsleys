@@ -205,16 +205,28 @@ function Comparables({
   agency: PublicAgency;
   variant: "vendor" | "landlord" | "preparation";
 }) {
+  const isLandlord = variant === "landlord";
+  // Indicative monthly rent per comparable, derived from the sale price
+  // and the postcode-area yield. Gated on the agency config flag so we
+  // only ship this view on /gravity for the demo; other landlord pages
+  // (Rawlins, Slettings, Haviva, Key Haven, Charringtons) keep the
+  // existing capital-values view until their copy has been signed off.
+  const showImpliedRent = isLandlord && agency.showImpliedRentComparables;
+  const yieldFraction = result.yieldPercent / 100;
   const heading =
     variant === "preparation"
       ? "Recent comparable sales near you"
-      : variant === "landlord"
-        ? "Recent comparable sales (capital values)"
-        : "Recent comparable sales";
+      : showImpliedRent
+        ? "What rents look like for properties like yours"
+        : isLandlord
+          ? "Recent comparable sales (capital values)"
+          : "Recent comparable sales";
   const sub =
     variant === "preparation"
       ? `These are the records ${agency.ctaPersonShort} will discuss at your in-person valuation. Same property type, sold nearby, verified by HM Land Registry.`
-      : "Same property type, sold nearby, verified by HM Land Registry.";
+      : showImpliedRent
+        ? `Properties recently sold near you, shown as the indicative monthly rent we'd expect at today's local lettings yield (~${result.yieldPercent.toFixed(1)}%). Actual let prices aren't published by HM Land Registry, so ${agency.ctaPersonShort} will bring live rental comparables from current pipeline to your appraisal.`
+        : "Same property type, sold nearby, verified by HM Land Registry.";
 
   return (
     <div className="mt-12">
@@ -233,29 +245,46 @@ function Comparables({
         style={{ borderColor: "var(--agency-border)" }}
       >
         <ul>
-          {result.comparables.map((c, i) => (
-            <li
-              key={`${c.address}-${c.date}-${i}`}
-              className="flex items-center justify-between gap-3 p-4 sm:p-5 border-b last:border-b-0"
-              style={{ borderColor: "var(--agency-border)" }}
-            >
-              <div className="min-w-0">
-                <div className="font-medium truncate" style={{ color: "var(--agency-text)" }}>
-                  {c.address}
+          {result.comparables.map((c, i) => {
+            const impliedPcm = Math.round((c.price * yieldFraction) / 12 / 25) * 25;
+            return (
+              <li
+                key={`${c.address}-${c.date}-${i}`}
+                className="flex items-center justify-between gap-3 p-4 sm:p-5 border-b last:border-b-0"
+                style={{ borderColor: "var(--agency-border)" }}
+              >
+                <div className="min-w-0">
+                  <div className="font-medium truncate" style={{ color: "var(--agency-text)" }}>
+                    {c.address}
+                  </div>
+                  <div className="text-sm flex gap-2 mt-0.5 flex-wrap" style={{ color: "var(--agency-muted)" }}>
+                    <span>{c.postcode}</span>
+                    <span>·</span>
+                    <span>{c.propertyTypeLabel}</span>
+                    <span>·</span>
+                    <span>Sold {formatDate(c.date)}</span>
+                  </div>
                 </div>
-                <div className="text-sm flex gap-2 mt-0.5 flex-wrap" style={{ color: "var(--agency-muted)" }}>
-                  <span>{c.postcode}</span>
-                  <span>·</span>
-                  <span>{c.propertyTypeLabel}</span>
-                  <span>·</span>
-                  <span>Sold {formatDate(c.date)}</span>
+                <div className="text-right shrink-0">
+                  {showImpliedRent ? (
+                    <>
+                      <div className="font-semibold" style={{ color: "var(--agency-text)" }}>
+                        £{impliedPcm.toLocaleString()}
+                        <span className="ml-1 text-xs font-normal" style={{ color: "var(--agency-muted)" }}>pcm</span>
+                      </div>
+                      <div className="text-xs" style={{ color: "var(--agency-muted)" }}>
+                        from £{c.price.toLocaleString()} sale
+                      </div>
+                    </>
+                  ) : (
+                    <div className="font-semibold" style={{ color: "var(--agency-text)" }}>
+                      £{c.price.toLocaleString()}
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div className="text-right font-semibold shrink-0" style={{ color: "var(--agency-text)" }}>
-                £{c.price.toLocaleString()}
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>

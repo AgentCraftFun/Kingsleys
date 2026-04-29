@@ -8,7 +8,7 @@ import type { PublicAgency } from "./AgencyApp";
 export type SelectedSlot = {
   /** ISO yyyy-mm-dd, day-only (no timezone). */
   dateIso: string;
-  /** "10:00" through "15:30". */
+  /** "10:00" through "17:00". */
   time: string;
 };
 
@@ -21,21 +21,20 @@ type SubmitData = {
   slot: SelectedSlot;
 };
 
-const SLOT_TIMES = [
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-] as const;
+// 13 half-hour slots running from 10:00 to 17:00 (last slot starts 5pm)
+// with a 13:00 to 14:00 lunch gap. Splitting into morning / afternoon
+// arrays drives the visual grouping in the per-day grid: 6-col grid
+// for the morning row, 7-col for the afternoon row, both responsive
+// down to 3-col on mobile.
+const MORNING_SLOTS = ["10:00", "10:30", "11:00", "11:30", "12:00", "12:30"] as const;
+const AFTERNOON_SLOTS = ["14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"] as const;
+const SLOT_TIMES: ReadonlyArray<string> = [...MORNING_SLOTS, ...AFTERNOON_SLOTS];
 
 /**
  * Deterministic "already booked" pattern. ~30% of slots come back booked
  * so the calendar looks lived-in rather than empty, but the pattern is
- * stable across renders (no flicker between SSR and client).
+ * stable across renders (no flicker between SSR and client) and across
+ * mobile vs desktop.
  */
 function isSlotBooked(dayIndex: number, slotIndex: number): boolean {
   return ((dayIndex * 13 + slotIndex * 7) % 10) < 3;
@@ -48,27 +47,30 @@ type Day = {
   weekdayShort: string;
   /** "28 Apr" etc. */
   dayMonth: string;
-  /** Index into the chronological weekday list, used by isSlotBooked. */
+  /** Whether this is Saturday or Sunday. */
+  isWeekend: boolean;
+  /** Index used by isSlotBooked, stable across the rendered list. */
   index: number;
 };
 
-function buildWeekdayList(): Day[] {
-  // 14 calendar days starting tomorrow, weekends filtered out.
+function buildDayList(): Day[] {
+  // 14 calendar days starting tomorrow, weekends included. Weekend days
+  // pick up an isWeekend flag so the row can render with a slightly
+  // softer header treatment ("Sat 3 May") without losing them entirely.
   const days: Day[] = [];
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() + 1);
-  let weekdayIndex = 0;
   for (let i = 0; i < 14; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
     const dow = d.getDay();
-    if (dow === 0 || dow === 6) continue; // Sun / Sat
     days.push({
       iso: toIsoDate(d),
       weekdayShort: d.toLocaleDateString("en-GB", { weekday: "short" }),
       dayMonth: d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
-      index: weekdayIndex++,
+      isWeekend: dow === 0 || dow === 6,
+      index: i,
     });
   }
   return days;
@@ -89,6 +91,8 @@ function formatSelectedLabel(slot: SelectedSlot): string {
   return `${weekday}, ${dayMonth} at ${slot.time}`;
 }
 
+type Phase = "pick" | "confirm";
+
 export default function SlotPicker({
   agency,
   result,
@@ -107,8 +111,9 @@ export default function SlotPicker({
   void result;
   void outOfDb;
 
-  const days = useMemo(buildWeekdayList, []);
+  const days = useMemo(buildDayList, []);
 
+  const [phase, setPhase] = useState<Phase>("pick");
   const [selected, setSelected] = useState<SelectedSlot | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -119,6 +124,21 @@ export default function SlotPicker({
   const contactValid =
     name.trim().length > 1 && /\S+@\S+\.\S+/.test(email) && phone.trim().length >= 7;
   const valid = contactValid && selected !== null;
+
+  function handlePickSlot(dateIso: string, time: string) {
+    setSelected({ dateIso, time });
+    setPhase("confirm");
+    // Snap back to the top of the page so the contact form is in view
+    // immediately. Without this the confirm phase opens at whatever
+    // scroll position the user was at when they tapped the slot.
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  function handleChangeSlot() {
+    setPhase("pick");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -141,8 +161,46 @@ export default function SlotPicker({
     }
   }
 
-  const ctaLabel = agency.audience === "landlord" ? "appraisal" : "valuation";
+  if (phase === "pick") {
+    return (
+      <PickPhase agency={agency} days={days} onCancel={onCancel} onPick={handlePickSlot} />
+    );
+  }
 
+  // phase === "confirm"
+  return (
+    <ConfirmPhase
+      agency={agency}
+      slot={selected!}
+      onChangeSlot={handleChangeSlot}
+      onCancel={onCancel}
+      name={name}
+      email={email}
+      phone={phone}
+      message={message}
+      setName={setName}
+      setEmail={setEmail}
+      setPhone={setPhone}
+      setMessage={setMessage}
+      submitting={submitting}
+      valid={valid}
+      error={error}
+      onSubmit={handleSubmit}
+    />
+  );
+}
+
+function PickPhase({
+  agency,
+  days,
+  onCancel,
+  onPick,
+}: {
+  agency: PublicAgency;
+  days: Day[];
+  onCancel: () => void;
+  onPick: (dateIso: string, time: string) => void;
+}) {
   return (
     <section className="w-full">
       <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-8 sm:pt-12 pb-20">
@@ -168,40 +226,107 @@ export default function SlotPicker({
         </h1>
         <p className="mt-3 text-base" style={{ color: "var(--agency-muted)" }}>
           {agency.audience === "landlord"
-            ? `30-minute landlord appraisal at the property. ${agency.ctaPersonShort} will walk round, advise on achievable rent and presentation, and leave you with a clear picture of what the investment can do.`
-            : `30-minute visit at the property. ${agency.ctaPersonShort} will walk round, refine the valuation and leave you with a clear picture of what your home could achieve on the open market.`}
+            ? `30 minutes at the property. ${agency.ctaPersonShort} will walk round, advise on achievable rent and presentation, and leave you with a clear picture of what the investment can do.`
+            : `30 minutes at the property. ${agency.ctaPersonShort} will walk round, refine the valuation, and leave you with a clear picture of what your home could achieve on the open market.`}
         </p>
 
         <div className="mt-8 space-y-3">
           {days.map((day) => (
-            <DayRow
-              key={day.iso}
-              day={day}
-              selected={selected}
-              onPick={(time) => setSelected({ dateIso: day.iso, time })}
-            />
+            <DayRow key={day.iso} day={day} onPick={(time) => onPick(day.iso, time)} />
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
 
-        {/* Selected confirmation banner — sticks above the contact form so
-            the user always sees what they're booking when scrolling. */}
+function ConfirmPhase({
+  agency,
+  slot,
+  onChangeSlot,
+  onCancel,
+  name,
+  email,
+  phone,
+  message,
+  setName,
+  setEmail,
+  setPhone,
+  setMessage,
+  submitting,
+  valid,
+  error,
+  onSubmit,
+}: {
+  agency: PublicAgency;
+  slot: SelectedSlot;
+  onChangeSlot: () => void;
+  onCancel: () => void;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  setName: (v: string) => void;
+  setEmail: (v: string) => void;
+  setPhone: (v: string) => void;
+  setMessage: (v: string) => void;
+  submitting: boolean;
+  valid: boolean;
+  error: string | null;
+  onSubmit: (e: React.FormEvent) => void;
+}) {
+  const ctaLabel = agency.audience === "landlord" ? "appraisal" : "valuation";
+  return (
+    <section className="w-full">
+      <div className="max-w-2xl mx-auto px-5 sm:px-8 pt-8 sm:pt-12 pb-20">
+        <button
+          onClick={onCancel}
+          className="text-sm mb-4 underline underline-offset-4"
+          style={{ color: "var(--agency-muted)" }}
+        >
+          ← Back to my report
+        </button>
+
+        {/* Locked-in slot header. Sticks at the top of the confirm screen
+            so the user always sees what they're about to book and has
+            an obvious "change time" affordance if they tapped the wrong
+            one. */}
         <div
-          className="mt-8 rounded-2xl p-4 sm:p-5"
+          className="rounded-2xl p-5 sm:p-6"
           style={{
-            background: selected ? "var(--agency-primary)" : "#ffffff",
-            color: selected ? "#ffffff" : "var(--agency-muted)",
-            border: `1px solid ${selected ? "var(--agency-primary)" : "var(--agency-border)"}`,
+            background: "var(--agency-primary)",
+            color: "#ffffff",
+            boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
           }}
         >
           <div className="text-xs font-medium uppercase tracking-wider opacity-80">
-            {selected ? "You're booking" : "No slot selected yet"}
+            Your slot
           </div>
-          <div className="mt-1 text-base sm:text-lg font-medium">
-            {selected ? formatSelectedLabel(selected) : "Tap an available time above to continue."}
+          <div className="mt-1 text-xl sm:text-2xl font-semibold leading-tight">
+            {formatSelectedLabel(slot)}
           </div>
+          <button
+            type="button"
+            onClick={onChangeSlot}
+            className="mt-3 inline-flex items-center gap-1 text-sm underline underline-offset-4"
+            style={{ color: "#ffffff", opacity: 0.9 }}
+          >
+            Change time
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <h1
+          className="mt-8 text-2xl sm:text-3xl font-semibold tracking-tight"
+          style={{ color: "var(--agency-text)" }}
+        >
+          One more step. Add your details.
+        </h1>
+        <p className="mt-2 text-base" style={{ color: "var(--agency-muted)" }}>
+          {agency.ctaPersonShort} will text or call to confirm and to make sure they have
+          everything they need before the visit.
+        </p>
+
+        <form onSubmit={onSubmit} className="mt-6 space-y-5">
           <Field label="Your name" htmlFor="sp-name">
             <input
               id="sp-name"
@@ -271,11 +396,7 @@ export default function SlotPicker({
               disabled={!valid || submitting}
               className="agency-btn-primary w-full sm:w-auto rounded-full px-8 py-4 text-base font-medium"
             >
-              {submitting
-                ? "Sending…"
-                : selected
-                  ? `Confirm my ${ctaLabel} for ${selected.time}`
-                  : `Pick a slot to confirm`}
+              {submitting ? "Sending…" : `Confirm my ${ctaLabel}`}
             </button>
             <p className="mt-3 text-xs" style={{ color: "var(--agency-muted)" }}>
               By submitting, you agree to {agency.name} getting in touch about your
@@ -284,7 +405,6 @@ export default function SlotPicker({
           </div>
         </form>
       </div>
-
       <style jsx>{`
         .field {
           width: 100%;
@@ -306,15 +426,7 @@ export default function SlotPicker({
   );
 }
 
-function DayRow({
-  day,
-  selected,
-  onPick,
-}: {
-  day: Day;
-  selected: SelectedSlot | null;
-  onPick: (time: string) => void;
-}) {
+function DayRow({ day, onPick }: { day: Day; onPick: (time: string) => void }) {
   return (
     <div
       className="rounded-2xl p-4 sm:p-5"
@@ -326,22 +438,68 @@ function DayRow({
       <div className="flex items-baseline justify-between gap-2 mb-3">
         <div className="text-base sm:text-lg font-semibold" style={{ color: "var(--agency-text)" }}>
           {day.weekdayShort} {day.dayMonth}
+          {day.isWeekend && (
+            <span
+              className="ml-2 text-xs font-medium uppercase tracking-wider align-middle"
+              style={{ color: "var(--agency-accent)" }}
+            >
+              Weekend
+            </span>
+          )}
         </div>
         <div className="text-xs" style={{ color: "var(--agency-muted)" }}>
           {countAvailable(day.index)} of {SLOT_TIMES.length} available
         </div>
       </div>
-      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-        {SLOT_TIMES.map((time, slotIndex) => {
+      <SlotGroup
+        title="Morning"
+        slots={MORNING_SLOTS}
+        offset={0}
+        day={day}
+        onPick={onPick}
+      />
+      <div className="h-2" />
+      <SlotGroup
+        title="Afternoon"
+        slots={AFTERNOON_SLOTS}
+        offset={MORNING_SLOTS.length}
+        day={day}
+        onPick={onPick}
+      />
+    </div>
+  );
+}
+
+function SlotGroup({
+  title,
+  slots,
+  offset,
+  day,
+  onPick,
+}: {
+  title: string;
+  slots: ReadonlyArray<string>;
+  offset: number;
+  day: Day;
+  onPick: (time: string) => void;
+}) {
+  return (
+    <div>
+      <div
+        className="text-[11px] font-medium uppercase tracking-wider mb-1.5"
+        style={{ color: "var(--agency-muted)" }}
+      >
+        {title}
+      </div>
+      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+        {slots.map((time, i) => {
+          const slotIndex = offset + i;
           const booked = isSlotBooked(day.index, slotIndex);
-          const isSelected =
-            !!selected && selected.dateIso === day.iso && selected.time === time;
           return (
             <SlotButton
               key={time}
               time={time}
               booked={booked}
-              selected={isSelected}
               onClick={() => onPick(time)}
             />
           );
@@ -360,40 +518,33 @@ function countAvailable(dayIndex: number): number {
 function SlotButton({
   time,
   booked,
-  selected,
   onClick,
 }: {
   time: string;
   booked: boolean;
-  selected: boolean;
   onClick: () => void;
 }) {
-  const bg = selected ? "var(--agency-primary)" : booked ? "var(--agency-bg-soft)" : "#ffffff";
-  const color = selected
-    ? "#ffffff"
-    : booked
-      ? "var(--agency-muted)"
-      : "var(--agency-text)";
-  const borderColor = selected
-    ? "var(--agency-primary)"
-    : booked
-      ? "var(--agency-border)"
-      : "var(--agency-border)";
+  // Tactile press: brief scale-down on active, hover lift on desktop.
+  // motion-reduce:transform-none respects prefers-reduced-motion.
+  const baseClasses =
+    "rounded-lg py-2.5 sm:py-3 text-sm font-medium transition-all duration-150 ease-out";
+  const interactiveClasses = booked
+    ? ""
+    : "hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] motion-reduce:transform-none cursor-pointer";
 
   return (
     <button
       type="button"
       onClick={booked ? undefined : onClick}
       disabled={booked}
-      aria-pressed={selected}
       aria-label={booked ? `${time} (booked)` : `Book ${time}`}
-      className="rounded-lg py-2.5 sm:py-3 text-sm font-medium transition-colors"
+      className={`${baseClasses} ${interactiveClasses}`}
       style={{
-        background: bg,
-        color,
-        border: `1px solid ${borderColor}`,
+        background: booked ? "var(--agency-bg-soft)" : "#ffffff",
+        color: booked ? "var(--agency-muted)" : "var(--agency-text)",
+        border: "1px solid var(--agency-border)",
         textDecoration: booked ? "line-through" : "none",
-        opacity: booked ? 0.6 : 1,
+        opacity: booked ? 0.55 : 1,
         cursor: booked ? "not-allowed" : "pointer",
       }}
     >
@@ -420,3 +571,4 @@ function Field({
     </label>
   );
 }
+

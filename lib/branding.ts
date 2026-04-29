@@ -95,6 +95,16 @@ export type AgencyConfig = {
    */
   bookingMode?: "form" | "calendar";
   /**
+   * If true and the active audience is "landlord", the report's
+   * Comparables section flips from showing capital sale prices to
+   * showing the implied monthly rent for each comparable (sale price
+   * times local yield divided by 12), with a caption that's honest
+   * about HM Land Registry not publishing rental transactions. Off by
+   * default so existing landlord pages keep their current copy until
+   * each agency signs off on the new view.
+   */
+  showImpliedRentComparables?: boolean;
+  /**
    * Set true for agencies that should be EXCLUDED from the first-wave email
    * sequence. Used by scripts/list-sendable.ts. Page is still buildable so
    * the asset exists for later, but the slug is filtered out of any
@@ -240,6 +250,7 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     heroHeadline: "What's your North-West London home worth?",
     allowAudienceSwitch: true,
     bookingMode: "calendar",
+    showImpliedRentComparables: true,
     emailSubjectTagByAudience: {
       vendor: "[GRAVITY, vendor lead]",
       landlord: "[GRAVITY, landlord lead]",

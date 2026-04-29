@@ -41,6 +41,7 @@ export default async function AgencyPage({
     headerBg: agency.headerBg ?? "white",
     allowAudienceSwitch: agency.allowAudienceSwitch ?? false,
     bookingMode: agency.bookingMode ?? "form",
+    showImpliedRentComparables: agency.showImpliedRentComparables ?? false,
   };
 
   return <AgencyApp agency={publicAgency} />;

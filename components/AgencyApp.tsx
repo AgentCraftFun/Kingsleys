@@ -39,6 +39,7 @@ export type PublicAgency = {
   headerBg: "white" | "primary";
   allowAudienceSwitch: boolean;
   bookingMode: "form" | "calendar";
+  showImpliedRentComparables: boolean;
 };
 
 export type FormState = {
@@ -418,16 +419,17 @@ function Welcome({
       : "Discover what your home is really worth.";
   // For agencies with the audience switch, we override the configured
   // heroHeadline (which is single-audience by definition) with a neutral
-  // one that asks the user to pick.
+  // one that reads as a natural continuation from the agency's own
+  // "Request a Valuation" CTA on their homepage.
   const headline = allowAudienceSwitch
-    ? "Sales or lettings — what would you like to know?"
+    ? `Welcome. What's your valuation for?`
     : (agency.heroHeadline ?? defaultHeadline);
 
   const defaultIntro =
     agency.audience === "landlord"
       ? `A data-driven rental report for your ${agency.area} property, based on local lettings yields and HM Land Registry capital values. Free, no obligation — then, if you'd like, an in-person landlord appraisal with ${agency.ctaPerson}.`
       : `A data-driven market report for your property in ${agency.area}, based on HM Land Registry sales. Free, no obligation — then, if you'd like, ${agency.hasNamedDirector ? "a personal valuation with" : "an in-person valuation from"} ${agency.ctaPerson}.`;
-  const switchIntro = `Pick a track and ${agency.shortName} will pull the right HM Land Registry data for you. Both reports are free, no obligation, and lead to an in-person appointment with ${agency.ctaPerson}.`;
+  const switchIntro = `Pick the right track and ${agency.shortName} will pull the relevant HM Land Registry data for you. Both reports are free, no obligation, and end with an in-person appointment with ${agency.ctaPerson} at the property.`;
   const intro = allowAudienceSwitch ? switchIntro : (agency.heroSubline ?? defaultIntro);
 
   return (
@@ -528,16 +530,20 @@ function AudiencePickerCard({
   selected: boolean;
   onClick: () => void;
 }) {
+  // Visual press feedback: Tailwind's active: variant gives an immediate
+  // CSS response before any React re-render, so the card feels tactile
+  // even on the first tap. Hover lift on desktop adds a separate cue
+  // that this is interactive.
   return (
     <button
       type="button"
       onClick={onClick}
-      className="text-left w-full rounded-2xl p-5 sm:p-6 transition-shadow"
+      className="text-left w-full rounded-2xl p-5 sm:p-6 transition-all duration-150 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985] active:shadow-inner motion-reduce:transform-none cursor-pointer"
       style={{
         background: "#ffffff",
         border: `2px solid ${selected ? "var(--agency-primary)" : "var(--agency-border)"}`,
         boxShadow: selected
-          ? "0 0 0 4px rgba(20, 28, 59, 0.06)"
+          ? "0 0 0 4px rgba(20, 28, 59, 0.10), 0 4px 12px rgba(0,0,0,0.06)"
           : "0 1px 2px rgba(0,0,0,0.04)",
       }}
     >
