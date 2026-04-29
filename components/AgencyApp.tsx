@@ -40,6 +40,7 @@ export type PublicAgency = {
   allowAudienceSwitch: boolean;
   bookingMode: "form" | "calendar";
   showImpliedRentComparables: boolean;
+  showBoroughRentContext: boolean;
 };
 
 export type FormState = {

@@ -2,6 +2,7 @@
 
 import type { ValuationResult } from "@/lib/valuation";
 import type { PublicAgency } from "./AgencyApp";
+import { lookupBoroughRent } from "@/lib/onsRent";
 
 export default function ReportView({
   agency,
@@ -213,6 +214,14 @@ function Comparables({
   // existing capital-values view until their copy has been signed off.
   const showImpliedRent = isLandlord && agency.showImpliedRentComparables;
   const yieldFraction = result.yieldPercent / 100;
+  // Borough-level ONS context. Returns null when the postcode district
+  // isn't in our covered set (Barnet / Brent / Harrow / Camden), in
+  // which case we hide the strip rather than show a wrong-borough
+  // figure. Same gating as the implied-rent comps: /gravity only.
+  const boroughLookup =
+    isLandlord && agency.showBoroughRentContext
+      ? lookupBoroughRent(result.district, result.input.bedrooms)
+      : null;
   const heading =
     variant === "preparation"
       ? "Recent comparable sales near you"
@@ -239,6 +248,8 @@ function Comparables({
       <p className="mt-1 text-sm" style={{ color: "var(--agency-muted)" }}>
         {sub}
       </p>
+
+      {boroughLookup && <BoroughContextStrip lookup={boroughLookup} />}
 
       <div
         className="mt-4 rounded-2xl border overflow-hidden bg-white"
@@ -287,6 +298,74 @@ function Comparables({
           })}
         </ul>
       </div>
+
+      {agency.showBoroughRentContext && isLandlord && <MethodologyNote />}
+    </div>
+  );
+}
+
+function BoroughContextStrip({
+  lookup,
+}: {
+  lookup: NonNullable<ReturnType<typeof lookupBoroughRent>>;
+}) {
+  // Strip sits between the section sub-caption and the comp list. Mobile
+  // (375px): label stacks above the figure. Desktop: label and figure
+  // sit on one line. Citation is always one line below.
+  return (
+    <div
+      className="mt-4 rounded-xl border p-4 sm:p-5"
+      style={{
+        borderColor: "var(--agency-border)",
+        background: "var(--agency-bg-soft)",
+      }}
+    >
+      <div
+        className="text-xs font-medium uppercase tracking-wider mb-1.5"
+        style={{ color: "var(--agency-accent)" }}
+      >
+        Borough context
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+        <div className="text-base sm:text-lg leading-snug" style={{ color: "var(--agency-text)" }}>
+          ONS reports the median rent for a {lookup.bedroomLabel} in the London Borough of{" "}
+          <span className="font-semibold">{lookup.borough}</span> at
+        </div>
+        <div className="mt-1 sm:mt-0 text-2xl sm:text-2xl font-semibold whitespace-nowrap" style={{ color: "var(--agency-text)" }}>
+          £{lookup.medianPerMonth.toLocaleString()}
+          <span className="ml-1 text-sm font-normal" style={{ color: "var(--agency-muted)" }}>per month</span>
+        </div>
+      </div>
+      <div className="mt-2 text-xs" style={{ color: "var(--agency-muted)" }}>
+        For the {lookup.referencePeriod}. Source: {lookup.sourceLabel}.
+        {!lookup.bedroomMatched && " Borough-wide median; a bedroom-level figure was not available for your property."}
+      </div>
+    </div>
+  );
+}
+
+function MethodologyNote() {
+  return (
+    <div
+      className="mt-4 rounded-xl border p-4 sm:p-5"
+      style={{
+        borderColor: "var(--agency-border)",
+        background: "#ffffff",
+      }}
+    >
+      <div
+        className="text-xs font-medium uppercase tracking-wider mb-1.5"
+        style={{ color: "var(--agency-muted)" }}
+      >
+        About this data
+      </div>
+      <p className="text-sm leading-relaxed" style={{ color: "var(--agency-text)" }}>
+        HM Land Registry doesn't publish rental transactions, only property sales. The
+        per-property estimates above combine recent sale prices in your area (HM Land
+        Registry) with current local yields, alongside borough-wide median rents from
+        ONS official statistics. Live comparable lets data is integrated at install
+        via Rightmove and Zoopla feeds.
+      </p>
     </div>
   );
 }

@@ -105,6 +105,16 @@ export type AgencyConfig = {
    */
   showImpliedRentComparables?: boolean;
   /**
+   * If true and the active audience is "landlord", the rental report
+   * shows an additional "borough context" strip with the official ONS
+   * median monthly rent for the user's postcode-mapped borough +
+   * bedroom count, plus a methodology note explaining how the
+   * implied-yield estimate, ONS borough median, and (post-install)
+   * Rightmove/Zoopla feeds combine. Reads from lib/onsRent.ts. Off by
+   * default; only /gravity opts in for the demo.
+   */
+  showBoroughRentContext?: boolean;
+  /**
    * Set true for agencies that should be EXCLUDED from the first-wave email
    * sequence. Used by scripts/list-sendable.ts. Page is still buildable so
    * the asset exists for later, but the slug is filtered out of any
@@ -251,6 +261,7 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     allowAudienceSwitch: true,
     bookingMode: "calendar",
     showImpliedRentComparables: true,
+    showBoroughRentContext: true,
     emailSubjectTagByAudience: {
       vendor: "[GRAVITY, vendor lead]",
       landlord: "[GRAVITY, landlord lead]",

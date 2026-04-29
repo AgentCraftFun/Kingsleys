@@ -42,6 +42,7 @@ export default async function AgencyPage({
     allowAudienceSwitch: agency.allowAudienceSwitch ?? false,
     bookingMode: agency.bookingMode ?? "form",
     showImpliedRentComparables: agency.showImpliedRentComparables ?? false,
+    showBoroughRentContext: agency.showBoroughRentContext ?? false,
   };
 
   return <AgencyApp agency={publicAgency} />;
