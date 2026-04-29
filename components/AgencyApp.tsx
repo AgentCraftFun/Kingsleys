@@ -528,21 +528,15 @@ function Welcome({
             <>
               <TrustTile
                 title="Real comparable sales"
-                body="3 to 5 recent, verified sales on your street or postcode sector. Real transactions, not estimates."
+                body="3-5 recent, verified sales on your street. Real transactions, not estimates."
               />
               <TrustTile
                 title="A defensible range"
-                body="We don't give you a magic number. You get the realistic band a buyer or tenant would actually pay."
+                body="No magic numbers. You get the realistic band a buyer or tenant would actually pay."
               />
               <TrustTile
-                title={heroLine}
-                bodyNode={
-                  <>
-                    Golders Green, Hampstead, Hendon, Finchley, West Hampstead, Wembley,
-                    Harrow, Stanmore and surrounding areas. This isn't a national tool.
-                    It's built specifically for your market. Prepared by {agency.name}.
-                  </>
-                }
+                title="Free. Takes 60 seconds."
+                body="No login. No sign-up. Answer a few questions and your report is ready immediately."
               />
             </>
           ) : (
@@ -567,6 +561,16 @@ function Welcome({
             </>
           )}
         </div>
+
+        {allowAudienceSwitch && (
+          <p
+            className="mt-6 text-sm text-center"
+            style={{ color: "var(--agency-muted)" }}
+          >
+            Covering Golders Green, Hampstead, Hendon, Finchley, West Hampstead and
+            surrounding NW London postcodes.
+          </p>
+        )}
       </div>
     </section>
   );
