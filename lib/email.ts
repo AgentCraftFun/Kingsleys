@@ -10,6 +10,15 @@ export type BookingPayload = {
   message: string;
   result: ValuationResult | null;
   outOfDb: OutOfDatabaseResult | null;
+  /**
+   * The audience the user actually transacted as. For single-audience
+   * agencies this is the configured value; for /gravity (and any future
+   * agency with allowAudienceSwitch) it's the user's pick.
+   */
+  audience: "vendor" | "landlord";
+  /** Set when bookingMode === "calendar" and a slot was chosen. */
+  slotDate: string | null;
+  slotTime: string | null;
 };
 
 type Input = {
@@ -35,9 +44,38 @@ function getSectorOrDistrict(payload: BookingPayload): string {
 export function renderBookingEmailSubject(agency: AgencyConfig, payload: BookingPayload): string {
   const where = getSectorOrDistrict(payload) || "no postcode";
   const oodTag = payload.outOfDb ? " [OUT-OF-DB, in patch]" : "";
-  const agencyTag = agency.emailSubjectTag ? `${agency.emailSubjectTag} ` : "";
-  const noun = agency.audience === "landlord" ? "appraisal" : "valuation";
-  return `${agencyTag}New ${noun} request for ${agency.name}: ${payload.name} — ${where}${oodTag}`;
+  // Prefer the per-audience tag when the agency declares one (e.g. /gravity
+  // wants distinct [GRAVITY, vendor lead] vs [GRAVITY, landlord lead] tags
+  // so its inbox can route the two lead types separately). Fall back to
+  // the single emailSubjectTag, then nothing.
+  const audienceTag = agency.emailSubjectTagByAudience?.[payload.audience];
+  const baseTag = audienceTag ?? agency.emailSubjectTag ?? "";
+  const agencyTag = baseTag ? `${baseTag} ` : "";
+  const noun = payload.audience === "landlord" ? "appraisal" : "valuation";
+  const slotSuffix =
+    payload.slotDate && payload.slotTime
+      ? ` for ${formatSlotShort(payload.slotDate, payload.slotTime)}`
+      : "";
+  return `${agencyTag}New ${noun} request for ${agency.name}: ${payload.name} — ${where}${slotSuffix}${oodTag}`;
+}
+
+function formatSlotShort(dateIso: string, time: string): string {
+  const d = new Date(dateIso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return `${dateIso} ${time}`;
+  const day = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  return `${day} ${time}`;
+}
+
+function formatSlotLong(dateIso: string, time: string): string {
+  const d = new Date(dateIso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return `${dateIso} at ${time}`;
+  const weekday = d.toLocaleDateString("en-GB", { weekday: "long" });
+  const dayMonth = d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  return `${weekday} ${dayMonth} at ${time}`;
 }
 
 export function renderBookingEmailHtml(agency: AgencyConfig, payload: BookingPayload): string {
@@ -95,9 +133,21 @@ export function renderBookingEmailHtml(agency: AgencyConfig, payload: BookingPay
     </table>`
     : "";
 
+  const slotRow =
+    payload.slotDate && payload.slotTime
+      ? `<tr><td style="padding:4px 14px 4px 0;color:#666;">Booked slot</td><td><strong>${escapeHtml(
+          formatSlotLong(payload.slotDate, payload.slotTime)
+        )}</strong></td></tr>`
+      : "";
+
+  const noun = payload.audience === "landlord" ? "appraisal" : "valuation";
+  const audienceRow = `<tr><td style="padding:4px 14px 4px 0;color:#666;">Lead type</td><td>${escapeHtml(
+    payload.audience
+  )} ${noun}</td></tr>`;
+
   return `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color:#1a1a1a; line-height:1.5;">
-    <h2 style="margin:0 0 12px 0;">New valuation request via ${escapeHtml(agency.name)} report</h2>
+    <h2 style="margin:0 0 12px 0;">New ${escapeHtml(noun)} request via ${escapeHtml(agency.name)} report</h2>
 
     <h3 style="margin:20px 0 8px;">Contact</h3>
     <table style="border-collapse:collapse;">
@@ -108,6 +158,8 @@ export function renderBookingEmailHtml(agency: AgencyConfig, payload: BookingPay
       <tr><td style="padding:4px 14px 4px 0;color:#666;">Phone</td><td><a href="tel:${encodeURIComponent(
         payload.phone
       )}">${escapeHtml(payload.phone)}</a></td></tr>
+      ${audienceRow}
+      ${slotRow}
       <tr><td style="padding:4px 14px 4px 0;color:#666;">Preferred time</td><td>${escapeHtml(
         payload.preferredTime
       )}</td></tr>
@@ -137,12 +189,19 @@ export function renderBookingEmailText(agency: AgencyConfig, payload: BookingPay
   const ood = payload.outOfDb;
   const input = getInput(payload);
 
+  const noun = payload.audience === "landlord" ? "appraisal" : "valuation";
+  const slotLine =
+    payload.slotDate && payload.slotTime
+      ? `Booked slot: ${formatSlotLong(payload.slotDate, payload.slotTime)}`
+      : "";
   const lines: string[] = [
-    `New valuation request via ${agency.name} report`,
+    `New ${noun} request via ${agency.name} report`,
+    `Lead type: ${payload.audience} ${noun}`,
     ``,
     `Name: ${payload.name}`,
     `Email: ${payload.email}`,
     `Phone: ${payload.phone}`,
+    slotLine,
     `Preferred time: ${payload.preferredTime}`,
     payload.message ? `Message: ${payload.message}` : "",
     ``,

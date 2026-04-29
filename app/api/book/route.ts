@@ -22,6 +22,12 @@ type Body = {
   message?: string;
   result?: ValuationResult | null;
   outOfDatabase?: OutOfDatabaseResult | null;
+  /** User-selected audience for agencies with allowAudienceSwitch=true. */
+  audience?: "vendor" | "landlord";
+  /** ISO yyyy-mm-dd, only set when bookingMode === "calendar". */
+  slotDate?: string | null;
+  /** "10:30" etc, only set when bookingMode === "calendar". */
+  slotTime?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -52,6 +58,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing report context" }, { status: 400 });
   }
 
+  // Effective audience: trust the client value only if it's a valid string
+  // and the agency actually supports switching. Otherwise fall back to the
+  // agency's configured audience — guards against a bookmarked /gravity URL
+  // that submits a payload meant for a single-audience agency.
+  const audienceFromBody =
+    body.audience === "vendor" || body.audience === "landlord" ? body.audience : null;
+  const effectiveAudience: "vendor" | "landlord" =
+    agency.allowAudienceSwitch && audienceFromBody ? audienceFromBody : agency.audience;
+
+  const slotDate = typeof body.slotDate === "string" ? body.slotDate.trim() : "";
+  const slotTime = typeof body.slotTime === "string" ? body.slotTime.trim() : "";
+
   const payload: BookingPayload = {
     name,
     email,
@@ -60,6 +78,9 @@ export async function POST(req: Request) {
     message,
     result,
     outOfDb,
+    audience: effectiveAudience,
+    slotDate: slotDate || null,
+    slotTime: slotTime || null,
   };
 
   const subject = renderBookingEmailSubject(agency, payload);

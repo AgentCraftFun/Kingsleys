@@ -70,8 +70,30 @@ export type AgencyConfig = {
   pageTitle?: string;
   /** Tag prepended to booking email subjects, e.g. "[RAWLINS — landlord lead]". */
   emailSubjectTag?: string;
+  /**
+   * Per-audience subject tags. Used by agencies that let the user
+   * self-select audience at the top of the page (see `allowAudienceSwitch`),
+   * so the booking inbox can still tell vendor leads apart from landlord
+   * leads. If absent, falls back to `emailSubjectTag`.
+   */
+  emailSubjectTagByAudience?: { vendor: string; landlord: string };
   /** Header background: white (default) or the agency's primary colour (e.g. Winkworth, dark green). */
   headerBg?: "white" | "primary";
+  /**
+   * If true, the welcome screen offers a vendor / landlord self-select
+   * before the form starts. The `audience` field becomes the *default*
+   * selection rather than a hard mode. Off by default — only set for
+   * agencies that genuinely operate sales AND lettings as equal lines
+   * of business and want to capture both lead types from the same URL.
+   */
+  allowAudienceSwitch?: boolean;
+  /**
+   * Booking step UX. "form" (default) collects contact details + free-text
+   * preferred-time. "calendar" replaces the form with an in-page slot
+   * picker that shows the next 14 weekdays and 8 slots/day, then submits
+   * the chosen slot alongside contact details.
+   */
+  bookingMode?: "form" | "calendar";
   /**
    * Set true for agencies that should be EXCLUDED from the first-wave email
    * sequence. Used by scripts/list-sendable.ts. Page is still buildable so
@@ -216,6 +238,12 @@ export const agencyConfigs: Record<string, AgencyConfig> = {
     audience: "vendor",
     framing: "standard",
     heroHeadline: "What's your North-West London home worth?",
+    allowAudienceSwitch: true,
+    bookingMode: "calendar",
+    emailSubjectTagByAudience: {
+      vendor: "[GRAVITY, vendor lead]",
+      landlord: "[GRAVITY, landlord lead]",
+    },
   },
   ellisandco: {
     slug: "ellisandco",

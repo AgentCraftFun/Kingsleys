@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import type { ValuationResult, PropertyType, Condition } from "@/lib/valuation";
 import type { OutOfDatabaseResult } from "@/app/api/valuation/route";
 import ReportView from "./ReportView";
 import BookingForm from "./BookingForm";
+import SlotPicker, { type SelectedSlot } from "./SlotPicker";
 import StepForm from "./StepForm";
 
 export type PublicAgency = {
@@ -36,6 +37,8 @@ export type PublicAgency = {
   heroHeadline?: string;
   heroSubline?: string;
   headerBg: "white" | "primary";
+  allowAudienceSwitch: boolean;
+  bookingMode: "form" | "calendar";
 };
 
 export type FormState = {
@@ -63,6 +66,22 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
   const [oodResult, setOodResult] = useState<OutOfDatabaseResult | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Runtime audience: defaults to the agency's configured audience. For
+  // agencies with allowAudienceSwitch=true the welcome screen lets the
+  // user pick before the form starts; the picked value is then threaded
+  // through every downstream component via `effectiveAgency` below.
+  const [selectedAudience, setSelectedAudience] = useState<"vendor" | "landlord">(
+    agency.audience
+  );
+  // Captured when bookingMode === "calendar", surfaced on the ThankYou
+  // screen so the user sees a confirmed day + time, not just "we'll be
+  // in touch."
+  const [confirmedSlot, setConfirmedSlot] = useState<SelectedSlot | null>(null);
+
+  const effectiveAgency = useMemo<PublicAgency>(
+    () => ({ ...agency, audience: selectedAudience }),
+    [agency, selectedAudience]
+  );
 
   const handleFormComplete = useCallback(
     async (final: FormState) => {
@@ -104,6 +123,7 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
       phone: string;
       preferredTime: string;
       message: string;
+      slot?: SelectedSlot | null;
     }) => {
       setBookingError(null);
       try {
@@ -115,12 +135,16 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
             result: result ?? null,
             outOfDatabase: oodResult ?? null,
             agencySlug: agency.slug,
+            audience: selectedAudience,
+            slotDate: data.slot?.dateIso ?? null,
+            slotTime: data.slot?.time ?? null,
           }),
         });
         if (!res.ok) {
           const text = await res.text();
           throw new Error(text || "Could not send your booking request.");
         }
+        setConfirmedSlot(data.slot ?? null);
         setStep("thanks");
       } catch (e) {
         setBookingError(
@@ -128,7 +152,7 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
         );
       }
     },
-    [result, oodResult, agency.slug]
+    [result, oodResult, agency.slug, selectedAudience]
   );
 
   return (
@@ -137,7 +161,15 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
       <main className="flex-1 w-full">
         {step === "welcome" && (
           <Welcome
-            agency={agency}
+            agency={effectiveAgency}
+            allowAudienceSwitch={agency.allowAudienceSwitch}
+            selectedAudience={selectedAudience}
+            onPickAudience={(a) => {
+              setSelectedAudience(a);
+              setForm(initialForm);
+              setSubmitError(null);
+              setStep("form");
+            }}
             onStart={() => {
               setForm(initialForm);
               setSubmitError(null);
@@ -148,17 +180,17 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
         )}
         {step === "form" && (
           <StepForm
-            agency={agency}
+            agency={effectiveAgency}
             initial={form}
             onCancel={() => setStep("welcome")}
             onComplete={handleFormComplete}
             submitError={submitError}
           />
         )}
-        {step === "loading" && <Loading agency={agency} />}
+        {step === "loading" && <Loading agency={effectiveAgency} />}
         {step === "report" && result && (
           <ReportView
-            agency={agency}
+            agency={effectiveAgency}
             result={result}
             onBook={() => {
               setBookingError(null);
@@ -174,7 +206,7 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
         )}
         {step === "out-of-db" && oodResult && (
           <OutOfDbView
-            agency={agency}
+            agency={effectiveAgency}
             result={oodResult}
             onBook={() => {
               setBookingError(null);
@@ -188,19 +220,29 @@ export default function AgencyApp({ agency }: { agency: PublicAgency }) {
             }}
           />
         )}
-        {step === "booking" && (
-          <BookingForm
-            agency={agency}
-            result={result}
-            outOfDb={oodResult}
-            onCancel={() => setStep(result ? "report" : "out-of-db")}
-            onSubmit={handleBookingSubmit}
-            error={bookingError}
-          />
-        )}
-        {step === "thanks" && <ThankYou agency={agency} />}
+        {step === "booking" &&
+          (agency.bookingMode === "calendar" ? (
+            <SlotPicker
+              agency={effectiveAgency}
+              result={result}
+              outOfDb={oodResult}
+              onCancel={() => setStep(result ? "report" : "out-of-db")}
+              onSubmit={handleBookingSubmit}
+              error={bookingError}
+            />
+          ) : (
+            <BookingForm
+              agency={effectiveAgency}
+              result={result}
+              outOfDb={oodResult}
+              onCancel={() => setStep(result ? "report" : "out-of-db")}
+              onSubmit={handleBookingSubmit}
+              error={bookingError}
+            />
+          ))}
+        {step === "thanks" && <ThankYou agency={effectiveAgency} slot={confirmedSlot} />}
       </main>
-      <Footer agency={agency} />
+      <Footer agency={effectiveAgency} />
     </div>
   );
 }
@@ -354,10 +396,16 @@ function formatCoverageLine(agency: PublicAgency): React.ReactNode {
 
 function Welcome({
   agency,
+  allowAudienceSwitch,
+  selectedAudience,
+  onPickAudience,
   onStart,
   submitError,
 }: {
   agency: PublicAgency;
+  allowAudienceSwitch: boolean;
+  selectedAudience: "vendor" | "landlord";
+  onPickAudience: (a: "vendor" | "landlord") => void;
   onStart: () => void;
   submitError: string | null;
 }) {
@@ -368,13 +416,19 @@ function Welcome({
     agency.audience === "landlord"
       ? "What rent can your property achieve?"
       : "Discover what your home is really worth.";
-  const headline = agency.heroHeadline ?? defaultHeadline;
+  // For agencies with the audience switch, we override the configured
+  // heroHeadline (which is single-audience by definition) with a neutral
+  // one that asks the user to pick.
+  const headline = allowAudienceSwitch
+    ? "Sales or lettings — what would you like to know?"
+    : (agency.heroHeadline ?? defaultHeadline);
 
   const defaultIntro =
     agency.audience === "landlord"
       ? `A data-driven rental report for your ${agency.area} property, based on local lettings yields and HM Land Registry capital values. Free, no obligation — then, if you'd like, an in-person landlord appraisal with ${agency.ctaPerson}.`
       : `A data-driven market report for your property in ${agency.area}, based on HM Land Registry sales. Free, no obligation — then, if you'd like, ${agency.hasNamedDirector ? "a personal valuation with" : "an in-person valuation from"} ${agency.ctaPerson}.`;
-  const intro = agency.heroSubline ?? defaultIntro;
+  const switchIntro = `Pick a track and ${agency.shortName} will pull the right HM Land Registry data for you. Both reports are free, no obligation, and lead to an in-person appointment with ${agency.ctaPerson}.`;
+  const intro = allowAudienceSwitch ? switchIntro : (agency.heroSubline ?? defaultIntro);
 
   return (
     <section className="w-full">
@@ -397,17 +451,36 @@ function Welcome({
           {intro}
         </p>
 
-        <div className="mt-10 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <button
-            onClick={onStart}
-            className="agency-btn-primary w-full sm:w-auto text-base font-medium rounded-full px-8 py-4 shadow-sm"
-          >
-            Start my report →
-          </button>
-          <span className="text-sm" style={{ color: "var(--agency-muted)" }}>
-            Takes about 90 seconds.
-          </span>
-        </div>
+        {allowAudienceSwitch ? (
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <AudiencePickerCard
+              eyebrow="Sales"
+              title="What my home would sell for"
+              body="HM Land Registry comparables for your street and postcode sector, plus a defensible price range."
+              selected={selectedAudience === "vendor"}
+              onClick={() => onPickAudience("vendor")}
+            />
+            <AudiencePickerCard
+              eyebrow="Lettings"
+              title="What my property would rent for"
+              body="Local lettings yields applied to current capital values, giving achievable PCM and gross yield."
+              selected={selectedAudience === "landlord"}
+              onClick={() => onPickAudience("landlord")}
+            />
+          </div>
+        ) : (
+          <div className="mt-10 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <button
+              onClick={onStart}
+              className="agency-btn-primary w-full sm:w-auto text-base font-medium rounded-full px-8 py-4 shadow-sm"
+            >
+              Start my report →
+            </button>
+            <span className="text-sm" style={{ color: "var(--agency-muted)" }}>
+              Takes about 90 seconds.
+            </span>
+          </div>
+        )}
 
         {submitError && (
           <div
@@ -439,6 +512,57 @@ function Welcome({
         </div>
       </div>
     </section>
+  );
+}
+
+function AudiencePickerCard({
+  eyebrow,
+  title,
+  body,
+  selected,
+  onClick,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-left w-full rounded-2xl p-5 sm:p-6 transition-shadow"
+      style={{
+        background: "#ffffff",
+        border: `2px solid ${selected ? "var(--agency-primary)" : "var(--agency-border)"}`,
+        boxShadow: selected
+          ? "0 0 0 4px rgba(20, 28, 59, 0.06)"
+          : "0 1px 2px rgba(0,0,0,0.04)",
+      }}
+    >
+      <div
+        className="text-xs font-medium uppercase tracking-wider mb-2"
+        style={{ color: "var(--agency-accent)" }}
+      >
+        {eyebrow}
+      </div>
+      <div
+        className="text-lg sm:text-xl font-semibold leading-snug mb-2"
+        style={{ color: "var(--agency-text)" }}
+      >
+        {title}
+      </div>
+      <div className="text-sm leading-relaxed" style={{ color: "var(--agency-muted)" }}>
+        {body}
+      </div>
+      <div
+        className="mt-4 inline-flex items-center gap-1 text-sm font-medium"
+        style={{ color: "var(--agency-primary)" }}
+      >
+        Start this report →
+      </div>
+    </button>
   );
 }
 
@@ -559,7 +683,15 @@ function conditionLabel(c: "needs-work" | "good" | "excellent" | "renovated"): s
   )[c];
 }
 
-function ThankYou({ agency }: { agency: PublicAgency }) {
+function ThankYou({
+  agency,
+  slot,
+}: {
+  agency: PublicAgency;
+  slot: SelectedSlot | null;
+}) {
+  const slotLine = slot ? formatSlotLine(slot) : null;
+
   return (
     <section className="max-w-2xl mx-auto px-5 sm:px-8 py-16 sm:py-24 text-center">
       <div
@@ -577,10 +709,20 @@ function ThankYou({ agency }: { agency: PublicAgency }) {
         </svg>
       </div>
       <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight" style={{ color: "var(--agency-text)" }}>
-        Booking request sent.
+        {slotLine ? "You're booked in." : "Booking request sent."}
       </h2>
+      {slotLine && (
+        <p
+          className="mt-4 text-lg sm:text-xl font-medium"
+          style={{ color: "var(--agency-primary)" }}
+        >
+          {slotLine}
+        </p>
+      )}
       <p className="mt-4 text-base sm:text-lg" style={{ color: "var(--agency-muted)" }}>
-        {agency.ctaPerson} will be in touch shortly to confirm a time that works for you.
+        {slotLine
+          ? `${agency.ctaPerson} will be in touch shortly to confirm.`
+          : `${agency.ctaPerson} will be in touch shortly to confirm a time that works for you.`}
         {agency.phone && agency.phone.trim().length > 0 && (
           <>
             {" In the meantime, if you'd like to speak sooner, call "}
@@ -597,6 +739,14 @@ function ThankYou({ agency }: { agency: PublicAgency }) {
       </p>
     </section>
   );
+}
+
+function formatSlotLine(slot: SelectedSlot): string {
+  const d = new Date(slot.dateIso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return `${slot.dateIso} at ${slot.time}`;
+  const weekday = d.toLocaleDateString("en-GB", { weekday: "long" });
+  const day = d.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+  return `You're booked in for ${weekday}, ${day} at ${slot.time}.`;
 }
 
 function PhoneIcon() {

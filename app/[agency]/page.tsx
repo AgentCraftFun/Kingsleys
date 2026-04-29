@@ -39,6 +39,8 @@ export default async function AgencyPage({
     heroHeadline: agency.heroHeadline,
     heroSubline: agency.heroSubline,
     headerBg: agency.headerBg ?? "white",
+    allowAudienceSwitch: agency.allowAudienceSwitch ?? false,
+    bookingMode: agency.bookingMode ?? "form",
   };
 
   return <AgencyApp agency={publicAgency} />;
