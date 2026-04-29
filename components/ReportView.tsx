@@ -15,12 +15,20 @@ export default function ReportView({
   onBook: () => void;
   onRestart: () => void;
 }) {
+  // Display the user's entered postcode rather than the technical
+  // sector/district label. The Land Registry sample is gathered by
+  // sector (e.g. "NW11 9") for sufficient comp volume, but users find
+  // "the area around NW11 9RR" more intuitive than "postcode sector
+  // NW11 9" — it's also closer to how an agent would talk about the
+  // local market in person. Each branch is grammatical when prefixed
+  // with "in" by the caller below.
+  const userPostcode = result.input.postcode;
   const scopeLabel =
     result.sampleScope === "sector"
-      ? `postcode sector ${result.sector}`
+      ? `the area around ${userPostcode}`
       : result.sampleScope === "district"
-      ? `${result.district} postcode district`
-      : "nearby NW London";
+      ? `the ${result.district} area`
+      : "the wider NW London area";
 
   const propertyTypeReadable =
     result.input.propertyType === "F"
